@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obrigado pela sua compra — FinanceUp</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(160deg, #0a1628 0%, #0d3330 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 48px 36px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 32px 64px rgba(0,0,0,.3);
+}
+.emoji { font-size: 64px; margin-bottom: 20px; }
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+h1 span { color: #0d9488; }
+.subtitle {
+  font-size: .95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 18px 36px;
+  border-radius: 100px;
+  text-decoration: none;
+  box-shadow: 0 8px 32px rgba(13,148,136,.4);
+  transition: transform .2s, box-shadow .2s;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  justify-content: center;
+}
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(13,148,136,.5);
+}
+.steps {
+  margin-top: 32px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  background: #0d9488;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: .8rem;
+  color: white;
+  flex-shrink: 0;
+}
+.step-text {
+  font-size: .85rem;
+  color: #374151;
+  line-height: 1.5;
+}
+.step-text strong {
+  display: block;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 28px 0;
+}
+.suporte {
+  font-size: .82rem;
+  color: #94a3b8;
+}
+.suporte a {
+  color: #0d9488;
+  text-decoration: none;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="emoji">🎉</div>
+  <h1>Compra confirmada!<br><span>Seu FinanceUp está pronto.</span></h1>
+  <p class="subtitle">Obrigado pela sua compra. Clique no botão abaixo para baixar seu app agora mesmo.</p>
+
+  <a href="LINK_DO_ARQUIVO_AQUI" class="btn-download" download="FinanceUp.html">
+    ⬇️ Baixar o FinanceUp agora
+  </a>
+
+  <hr class="divider">
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <strong>Baixe o arquivo acima</strong>
+        Salve na memória do celular ou no PC.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <strong>Abra no navegador</strong>
+        Chrome no Android ou Safari no iPhone — funciona em qualquer um.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <strong>Adicione à tela inicial</strong>
+        Android: menu ⋮ → "Adicionar à tela inicial". iPhone: compartilhar → "Adicionar à Tela de Início".
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <strong>Crie seu PIN e comece</strong>
+        Na primeira abertura o app te guia com um tutorial rápido.
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <p class="suporte">Dúvidas? Fale comigo: <a href="mailto:cassiano.anderson.ac@gmail.com">cassiano.anderson.ac@gmail.com</a></p>
+</div>
+</body>
+</html>
