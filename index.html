@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceUp — Seu dinheiro, finalmente organizado</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal:    #0d9488;
+  --teal2:   #14b8a6;
+  --teal3:   #ccfbf1;
+  --dark:    #0a1628;
+  --dark2:   #112240;
+  --text:    #0f172a;
+  --muted:   #64748b;
+  --white:   #ffffff;
+  --border:  #e2e8f0;
+  --amber:   #f59e0b;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--white);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(160deg, var(--dark) 0%, var(--dark2) 50%, #0d3330 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(13,148,136,.25) 0%, transparent 70%);
+  top: -100px; right: -150px;
+  border-radius: 50%;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(20,184,166,.15) 0%, transparent 70%);
+  bottom: -80px; left: -80px;
+  border-radius: 50%;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(13,148,136,.2);
+  border: 1px solid rgba(13,148,136,.4);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--teal2);
+  margin-bottom: 28px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.2rem, 8vw, 3.8rem);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 20px;
+  max-width: 700px;
+}
+
+.hero h1 span {
+  color: var(--teal2);
+}
+
+.hero p {
+  font-size: clamp(.95rem, 3vw, 1.15rem);
+  color: rgba(255,255,255,.7);
+  max-width: 480px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 36px;
+  border-radius: 100px;
+  text-decoration: none;
+  box-shadow: 0 8px 32px rgba(13,148,136,.4);
+  transition: transform .2s, box-shadow .2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(13,148,136,.5);
+}
+
+.hero-price {
+  margin-top: 16px;
+  font-size: .88rem;
+  color: rgba(255,255,255,.5);
+}
+
+.hero-price strong {
+  color: var(--white);
+  font-size: 1rem;
+}
+
+/* Phone mockup */
+.phone-wrap {
+  position: relative;
+  margin-top: 60px;
+  z-index: 1;
+}
+
+.phone {
+  width: min(280px, 72vw);
+  background: var(--dark);
+  border-radius: 40px;
+  padding: 14px;
+  border: 2px solid rgba(255,255,255,.1);
+  box-shadow: 0 40px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05);
+  margin: 0 auto;
+}
+
+.phone-screen {
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 60%, #2563eb 100%);
+  border-radius: 28px;
+  padding: 20px 16px;
+  color: white;
+}
+
+.phone-screen-label {
+  font-size: .6rem;
+  opacity: .7;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 4px;
+}
+
+.phone-screen-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.phone-screen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.phone-screen-card {
+  background: rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.phone-screen-card-label {
+  font-size: .6rem;
+  opacity: .8;
+  margin-bottom: 2px;
+}
+
+.phone-screen-card-value {
+  font-weight: 700;
+  font-size: .85rem;
+}
+
+.phone-mini-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.phone-mini-card {
+  background: #112240;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.phone-mini-card-label {
+  font-size: .55rem;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 2px;
+}
+
+.phone-mini-card-value {
+  font-weight: 700;
+  font-size: .8rem;
+  color: white;
+}
+
+/* ── SECTION BASE ── */
+section {
+  padding: 80px 24px;
+}
+
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── PROBLEMA ── */
+.problema {
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.problema-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 36px;
+}
+
+.problema-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.problema-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.problema-text {
+  font-size: .95rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.problema-text strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* ── FUNCIONALIDADES ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.feature-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 16px;
+  transition: border-color .2s, transform .2s;
+}
+
+.feature-card:hover {
+  border-color: var(--teal);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.feature-title {
+  font-family: 'Syne', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.feature-desc {
+  font-size: .8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── PARA QUEM É ── */
+.para-quem {
+  background: var(--dark);
+  color: white;
+}
+
+.para-quem .section-title { color: white; }
+.para-quem .section-sub { color: rgba(255,255,255,.6); }
+
+.perfil-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.perfil-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.perfil-item-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+.perfil-item-text {
+  font-size: .92rem;
+  color: rgba(255,255,255,.85);
+  line-height: 1.4;
+}
+
+.perfil-item-text strong {
+  display: block;
+  color: white;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* ── COMO FUNCIONA ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 36px;
+  position: relative;
+}
+
+.steps::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 24px;
+  bottom: 24px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--teal), var(--teal2));
+  border-radius: 2px;
+}
+
+.step {
+  display: flex;
+  gap: 18px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.step:last-child { padding-bottom: 0; }
+
+.step-num {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: .9rem;
+  color: white;
+  flex-shrink: 0;
+  z-index: 1;
+  box-shadow: 0 0 0 4px white;
+}
+
+.step-content { padding-top: 8px; }
+
+.step-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.step-desc {
+  font-size: .88rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── GARANTIA ── */
+.garantia {
+  background: #f0fdfa;
+  border-top: 1px solid #99f6e4;
+  border-bottom: 1px solid #99f6e4;
+}
+
+.garantia-box {
+  background: white;
+  border: 2px solid var(--teal);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  margin-top: 36px;
+}
+
+.garantia-icon { font-size: 3rem; margin-bottom: 12px; }
+
+.garantia-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.garantia-text {
+  font-size: .9rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── CTA FINAL ── */
+.cta-final {
+  background: linear-gradient(160deg, var(--dark) 0%, var(--dark2) 100%);
+  text-align: center;
+  color: white;
+  padding: 80px 24px 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-final::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(13,148,136,.2) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.cta-final .section-title { color: white; margin-bottom: 12px; }
+.cta-final .section-sub { color: rgba(255,255,255,.6); margin-bottom: 36px; }
+
+.price-box {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  padding: 24px 40px;
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 1;
+}
+
+.price-label {
+  font-size: .75rem;
+  color: rgba(255,255,255,.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.price-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+
+.price-sub {
+  font-size: .8rem;
+  color: var(--teal2);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.cta-final .btn-cta {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05rem;
+  padding: 18px 44px;
+}
+
+.cta-checks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82rem;
+  color: rgba(255,255,255,.6);
+}
+
+.cta-check::before {
+  content: '✓';
+  color: var(--teal2);
+  font-weight: 700;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--dark);
+  text-align: center;
+  padding: 24px;
+  font-size: .78rem;
+  color: rgba(255,255,255,.3);
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-badge, .hero h1, .hero p, .btn-cta, .hero-price, .phone-wrap {
+  animation: fadeUp .6s ease both;
+}
+.hero h1      { animation-delay: .1s; }
+.hero p       { animation-delay: .2s; }
+.btn-cta      { animation-delay: .3s; }
+.hero-price   { animation-delay: .35s; }
+.phone-wrap   { animation-delay: .4s; }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-badge">💹 Novo · Acesso Vitalício</div>
+  <h1>Seu dinheiro,<br><span>finalmente organizado</span></h1>
+  <p>Controle cartões, gastos, parcelas e investimentos em um único app. Sem mensalidade, sem cadastro, sem complicação.</p>
+  <a href="#comprar" class="btn-cta">Quero organizar meu dinheiro →</a>
+  <p class="hero-price">Pagamento único · <strong>R$ 19,99</strong> · Acesso vitalício</p>
+
+  <!-- Mockup do celular -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-screen-label">Saldo Previsto · Junho</div>
+        <div class="phone-screen-value">R$ 1.240,00</div>
+        <div class="phone-screen-grid">
+          <div class="phone-screen-card">
+            <div class="phone-screen-card-label">💰 Receita</div>
+            <div class="phone-screen-card-value">R$ 3.500</div>
+          </div>
+          <div class="phone-screen-card">
+            <div class="phone-screen-card-label">📤 Despesas</div>
+            <div class="phone-screen-card-value">R$ 2.260</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-mini-cards">
+        <div class="phone-mini-card">
+          <div class="phone-mini-card-label">📦 Parcelas</div>
+          <div class="phone-mini-card-value">R$ 580</div>
+        </div>
+        <div class="phone-mini-card">
+          <div class="phone-mini-card-label">💳 Faturas</div>
+          <div class="phone-mini-card-value">R$ 320</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PROBLEMA ══ -->
+<section class="problema">
+  <div class="container">
+    <div class="section-label">O problema</div>
+    <h2 class="section-title">Você sabe quanto vai sobrar no final do mês?</h2>
+    <p class="section-sub">A maioria das pessoas só descobre que gastou demais quando o saldo já está no vermelho.</p>
+    <div class="problema-grid">
+      <div class="problema-item">
+        <div class="problema-icon">😰</div>
+        <div class="problema-text">
+          <strong>Parcelas esquecidas</strong>
+          Você só lembra da parcela quando a fatura chega — e já não tem mais como planejar.
+        </div>
+      </div>
+      <div class="problema-item">
+        <div class="problema-icon">📊</div>
+        <div class="problema-text">
+          <strong>Planilha que ninguém usa</strong>
+          Você começa com uma planilha, abandona na segunda semana e volta à estaca zero.
+        </div>
+      </div>
+      <div class="problema-item">
+        <div class="problema-icon">💸</div>
+        <div class="problema-text">
+          <strong>Gastos invisíveis</strong>
+          Mercado, combustível, delivery, assinaturas — somam sem você perceber.
+        </div>
+      </div>
+      <div class="problema-item">
+        <div class="problema-icon">🚗</div>
+        <div class="problema-text">
+          <strong>Financiamento jogado na memória</strong>
+          Parcela do carro, aluguel, conta de luz — tudo misturado sem visão do total mensal.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FUNCIONALIDADES ══ -->
+<section>
+  <div class="container">
+    <div class="section-label">O que você recebe</div>
+    <h2 class="section-title">Tudo que você precisa, em um só arquivo</h2>
+    <p class="section-sub">Abre direto no celular, sem instalar nada. Seus dados ficam salvos localmente — só você tem acesso.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Dashboard completo</div>
+        <div class="feature-desc">Saldo previsto, gráfico dos últimos 6 meses, receitas e despesas em tempo real.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💳</div>
+        <div class="feature-title">Controle de cartões</div>
+        <div class="feature-desc">Cadastre todos os seus cartões, acompanhe faturas e limites disponíveis.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title">Parcelamentos</div>
+        <div class="feature-desc">Registre compras parceladas e veja automaticamente quantas parcelas faltam.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏠</div>
+        <div class="feature-title">Contas fixas</div>
+        <div class="feature-desc">Aluguel, financiamento, assinaturas — com alerta de vencimento mensal.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧾</div>
+        <div class="feature-title">Registro de gastos</div>
+        <div class="feature-desc">Anote cada gasto por categoria e veja onde seu dinheiro está indo de verdade.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <div class="feature-title">Investimentos</div>
+        <div class="feature-desc">Acompanhe seu Tesouro Direto, CDB e outras aplicações em um só lugar.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">PIN de segurança</div>
+        <div class="feature-desc">Crie um PIN de 4 dígitos. Seus dados ficam protegidos no seu próprio celular.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☁️</div>
+        <div class="feature-title">Backup no Google Drive</div>
+        <div class="feature-desc">Salve e restaure seus dados a qualquer momento com um clique.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PARA QUEM É ══ -->
+<section class="para-quem">
+  <div class="container">
+    <div class="section-label" style="color:var(--teal2)">Para quem é</div>
+    <h2 class="section-title">Feito para quem quer sair do caos financeiro</h2>
+    <p class="section-sub">Não importa se você ganha R$ 1.500 ou R$ 8.000 — sem controle, o dinheiro some do mesmo jeito.</p>
+    <div class="perfil-list">
+      <div class="perfil-item">
+        <div class="perfil-item-icon">👨‍💼</div>
+        <div class="perfil-item-text">
+          <strong>Assalariado que não sabe para onde vai o salário</strong>
+          Você recebe, paga as contas e no dia 20 já não tem mais nada. O FinanceUp te mostra o porquê.
+        </div>
+      </div>
+      <div class="perfil-item">
+        <div class="perfil-item-icon">🎓</div>
+        <div class="perfil-item-text">
+          <strong>Jovem começando a vida financeira</strong>
+          Primeiro emprego, primeiro cartão, primeiro financiamento — e zero controle. Hora de mudar isso.
+        </div>
+      </div>
+      <div class="perfil-item">
+        <div class="perfil-item-icon">👫</div>
+        <div class="perfil-item-text">
+          <strong>Casal que divide as contas</strong>
+          Parcelas compartilhadas, gastos do lar, financiamento — tudo em um lugar só para ter visão clara.
+        </div>
+      </div>
+      <div class="perfil-item">
+        <div class="perfil-item-icon">🚀</div>
+        <div class="perfil-item-text">
+          <strong>Quem quer começar a investir</strong>
+          Antes de investir, você precisa saber quanto sobra. O FinanceUp te dá esse número todo mês.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ COMO FUNCIONA ══ -->
+<section>
+  <div class="container">
+    <div class="section-label">Como funciona</div>
+    <h2 class="section-title">Pronto para usar em menos de 5 minutos</h2>
+    <p class="section-sub">Sem instalação, sem cadastro, sem configuração complicada.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Compre e receba o arquivo</div>
+          <div class="step-desc">Após o pagamento você recebe o arquivo FinanceUp.html direto no e-mail, em segundos.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Abra no celular ou PC</div>
+          <div class="step-desc">Sem instalar nada. Basta abrir o arquivo no navegador — Chrome, Safari ou qualquer outro.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Crie seu PIN e siga o tutorial</div>
+          <div class="step-desc">Na primeira abertura o app te guia em 5 slides simples. Em minutos você já sabe usar tudo.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Cadastre seus dados e pronto</div>
+          <div class="step-desc">Cartões, gastos, parcelas, contas fixas. O dashboard já começa a mostrar seu saldo previsto.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ GARANTIA ══ -->
+<section class="garantia">
+  <div class="container">
+    <div class="section-label">Sem risco</div>
+    <h2 class="section-title">Garantia de 7 dias</h2>
+    <p class="section-sub">Se você comprar e não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas.</p>
+    <div class="garantia-box">
+      <div class="garantia-icon">🛡️</div>
+      <div class="garantia-title">7 dias de garantia incondicional</div>
+      <div class="garantia-text">
+        Por lei, todo produto digital vendido no Brasil tem garantia de 7 dias. Se não ficar satisfeito com o FinanceUp, é só pedir o reembolso — sem burocracia, sem questionamento.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA FINAL ══ -->
+<section class="cta-final" id="comprar">
+  <div class="container">
+    <div class="section-label" style="color:var(--teal2)">Oferta de lançamento</div>
+    <h2 class="section-title">Comece hoje a controlar seu dinheiro</h2>
+    <p class="section-sub">Pagamento único. Sem mensalidade. Sem surpresa.</p>
+    <div class="price-box">
+      <div class="price-label">Valor de lançamento</div>
+      <div class="price-value">R$ 19,99</div>
+      <div class="price-sub">✓ Acesso vitalício · ✓ Atualizações inclusas</div>
+    </div>
+    <br>
+    <a href="https://pay.kiwify.com.br/qHNcVXk" class="btn-cta">Quero o FinanceUp agora →</a>
+    <div class="cta-checks">
+      <div class="cta-check">Pagamento seguro</div>
+      <div class="cta-check">Entrega imediata</div>
+      <div class="cta-check">Garantia de 7 dias</div>
+      <div class="cta-check">Acesso vitalício</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 FinanceUp · Produto digital · Todos os direitos reservados
+</footer>
+
+</body>
+</html>
