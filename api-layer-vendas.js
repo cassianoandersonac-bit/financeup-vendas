@@ -154,10 +154,26 @@ async function _saveComRetry(campo, val) {
   }
 }
 
+// ── Re-atribui variáveis globais do app com dados da nuvem ────
+function _reatribuirVariaveis() {
+  if (typeof cartoes !== 'undefined')           cartoes           = load('fp_cartoes', cartoes);
+  if (typeof parcelas !== 'undefined')          parcelas          = load('fp_parcelas', parcelas);
+  if (typeof gastos !== 'undefined')            gastos            = load('fp_gastos', gastos);
+  if (typeof investimentos !== 'undefined')     investimentos     = load('fp_invest', investimentos);
+  if (typeof adicionalParcelas !== 'undefined') adicionalParcelas = load('fp_adicional_parcelas', adicionalParcelas);
+  if (typeof adicionalGastos !== 'undefined')   adicionalGastos   = load('fp_adicional_gastos', adicionalGastos);
+  if (typeof contasFixas !== 'undefined')       contasFixas       = load('fp_contas_fixas', contasFixas);
+  if (typeof receitas !== 'undefined')          receitas          = load('fp_receitas', receitas);
+  if (typeof cofrinhos !== 'undefined')         cofrinhos         = load('fp_cofrinhos', cofrinhos);
+  if (typeof metas !== 'undefined')             metas             = load('fp_metas', metas);
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await _autenticar();
+    // Re-atribui variáveis com dados da nuvem (carregados após auth async)
+    _reatribuirVariaveis();
   } catch (err) {
     console.warn('[api-vendas] Sem acesso à nuvem, continuando offline:', err);
     // Fallback offline: usa load/save do localStorage
