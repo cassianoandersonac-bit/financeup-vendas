@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinanceUp">
+<script>window.FP_API_BASE = 'https://financas-backend-eight.vercel.app';</script>
 <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;FinanceUp&quot;,&quot;short_name&quot;:&quot;FinanceUp&quot;,&quot;description&quot;:&quot;Controle financeiro pessoal&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230d9488&quot;,&quot;theme_color&quot;:&quot;%230d9488&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230d9488'/%3E%3Crect x='80' y='300' width='80' height='132' rx='12' fill='rgba(255,255,255,0.5)'/%3E%3Crect x='216' y='220' width='80' height='212' rx='12' fill='rgba(255,255,255,0.75)'/%3E%3Crect x='352' y='140' width='80' height='292' rx='12' fill='white'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <script>
 if ('serviceWorker' in navigator) {
@@ -869,6 +870,20 @@ input[type=file] { display: none; }
 .bp-divider { border-top: 1px solid var(--border2); margin: 5px 0 3px; }
 .bp-total  { display: flex; justify-content: space-between; gap: 18px; font-weight: 800; color: var(--teal); padding-top: 3px; }
 
+/* CARD PARCELAS POPUP */
+.card-parcelas-popup {
+  display: none; position: fixed; min-width: 240px; max-width: 320px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 14px; box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  z-index: 9999; font-size: 0.75rem; pointer-events: none;
+}
+.card-parcelas-popup.visible { display: block; }
+.cpp-header { font-size: 0.62rem; color: var(--muted2); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 5px; font-weight: 700; }
+.cpp-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-top: 1px solid var(--border); color: var(--text); }
+.cpp-row:first-of-type { border-top: none; }
+.cpp-parc { color: var(--muted2); font-size: 0.68rem; margin-left: 4px; }
+.cpp-total { display: flex; justify-content: space-between; gap: 12px; font-weight: 800; color: var(--teal); padding-top: 4px; border-top: 1px solid var(--border2); margin-top: 3px; }
+
 .mob-bottom-nav { display: none; }
 .mob-more-btn {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -1488,6 +1503,7 @@ input[type=file] { display: none; }
           </div>
           <button class="btn-sync-export" onclick="exportarDados()">⬇️ Exportar</button>
           <button class="btn-sync-import" onclick="document.getElementById('fileSync').click()">⬆️ Importar</button>
+          <button class="btn-sync-import" style="background:var(--teal);color:#fff;border-color:var(--teal);font-weight:700;" onclick="abrirFecharMes()">📅 Fechar Mês</button>
           <button class="btn-gdrive" onclick="exportarParaGDrive()">
             <svg width="12" height="12" viewBox="0 0 87.3 78"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.13 15.13 0 003.35 8.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3L1.4 48.4A15.13 15.13 0 000 53.0h27.5z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.9-1.55 1.2-3.25 1.2-5H59.8l5.85 11.5z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="M59.8 53H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 53h27.45a15.17 15.17 0 00-1.2-5z" fill="#ffba00"/></svg>
             Drive
@@ -2346,6 +2362,19 @@ input[type=file] { display: none; }
   </div>
 </div>
 
+<!-- MODAL FECHAR MÊS -->
+<div class="modal-overlay" id="modalFecharMes">
+  <div class="modal">
+    <h3>📅 Fechar Mês</h3>
+    <p id="fecharMesResumo" style="font-size:0.9rem;color:var(--muted);line-height:1.7;margin-bottom:6px"></p>
+    <p style="font-size:0.82rem;color:var(--red);margin-top:10px">⚠️ Esta ação não pode ser desfeita. Faça um backup antes se quiser.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('modalFecharMes').classList.remove('open')">Cancelar</button>
+      <button class="btn-save" onclick="confirmarFecharMes()">Fechar Mês</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CONFIRMAR IMPORTAÇÃO -->
 <div class="modal-overlay" id="modalConfirmImport">
   <div class="modal">
@@ -2756,7 +2785,7 @@ function renderCartoes() {
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalFatura = cartoes.reduce((a,c) => a + (c.status !== 'pago' ? c.fatura : 0), 0);
   const totalParcelaMes = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
-  const totalFaturaComParcelas = totalFatura + totalParcelaMes;
+  const totalFaturaComParcelas = totalParcelaMes;
   const totalLimite = cartoes.reduce((a,c) => a + c.limite, 0);
   const qtdAbertos = cartoes.filter(c => c.status !== 'pago').length;
   const qtdPagos = cartoes.filter(c => c.status === 'pago').length;
@@ -2824,14 +2853,26 @@ function renderCartoes() {
     const gastosDoMes = gastos.filter(g => g.cartao === c.nome && g.data.startsWith(mesAtual)).reduce((a,g) => a + g.valor, 0);
     const totalParcelado = parcelas.filter(p => p.cartao === c.nome && p.pagas < p.totalParc).reduce((a,p) => a + (p.totalParc - p.pagas) * p.mensal, 0);
     const parcelaMes = parcelas.filter(p => p.cartao === c.nome && p.pagas < p.totalParc).reduce((a,p) => a + p.mensal, 0);
-    const totalCartaoMes = gastosDoMes + parcelaMes;
+    const totalCartaoMes = parcelaMes;
     const adicParceladoTotal = adicionalParcelas.filter(p => p.cartao === c.nome && p.pagas < p.totalParc).reduce((a,p) => a + (p.totalParc - p.pagas) * p.mensal, 0);
     const totalComprometido = c.fatura + totalParcelado + adicParceladoTotal;
     const uso = c.limite > 0 ? Math.min(100, (totalComprometido / c.limite) * 100) : 0;
     const disponivel = c.limite - totalComprometido;
 
+    const parcelasDoCartao = parcelas.filter(p => p.cartao === c.nome && p.pagas < p.totalParc);
+    const totalParcelasPopup = parcelasDoCartao.reduce((a,p) => a + p.mensal, 0);
+    const parcelasPopupHTML = parcelasDoCartao.length === 0
+      ? `<div class="cpp-row" style="color:var(--muted)">Sem parcelas ativas</div>`
+      : parcelasDoCartao.map(p => `
+          <div class="cpp-row">
+            <span>${p.nome}</span>
+            <span>${fmt(p.mensal)}<span class="cpp-parc">${p.pagas}/${p.totalParc}x</span></span>
+          </div>`).join('') +
+        `<div class="cpp-total"><span>Total</span><span>${fmt(totalParcelasPopup)}</span></div>`;
+
     return `
-    <div class="card-item ${cls}">
+    <div class="card-item card-item-wrap ${cls}">
+      <div class="card-parcelas-popup"><div class="cpp-header">📋 Parcelas — ${c.nome}</div>${parcelasPopupHTML}</div>
       <div class="card-top">
         <div>
           <div class="card-name">💳 ${c.nome} <span class="badge ${c.status}">${c.status === 'pago' ? 'Pago' : c.status === 'atrasado' ? 'Atrasado' : 'Em aberto'}</span></div>
@@ -3832,7 +3873,7 @@ function atualizarTotalGlobal() {
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalParcelas = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
   const totalFixas = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0);
-  const totalGeral = totalGastos + totalParcelas + totalFixas;
+  const totalGeral = totalParcelas + totalFixas;
 
   const totalReceitas = receitas.reduce((a,r) => {
     return a + r.valor;
@@ -4179,6 +4220,98 @@ function cancelarImport() {
   document.getElementById('modalConfirmImport').classList.remove('open');
 }
 
+// ---- FECHAR MÊS ----
+function abrirFecharMes() {
+  const pagos = cartoes.filter(c => c.status === 'pago');
+  const abertos = cartoes.filter(c => c.status !== 'pago');
+
+  if (pagos.length === 0) {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;';
+    box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">💳</div><p style="font-weight:700;margin:0 0 8px;color:#0f2724">Nenhum cartão pago</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Marque pelo menos um cartão como pago antes de fechar o mês.</p>';
+    const btn = document.createElement('button');
+    btn.textContent = 'OK';
+    btn.style.cssText = 'padding:10px 24px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
+    btn.onclick = () => document.body.removeChild(ov);
+    box.appendChild(btn);
+    ov.appendChild(box);
+    ov.addEventListener('click', e => { if (e.target === ov) document.body.removeChild(ov); });
+    document.body.appendChild(ov);
+    return;
+  }
+
+  const nomesPagos = pagos.map(c => c.nome);
+  const parcelasAvancam = parcelas.filter(p => p.pagas < p.totalParc && nomesPagos.includes(p.cartao));
+  const adicionaisAvancam = adicionalParcelas.filter(p => p.pagas < p.totalParc && nomesPagos.includes(p.cartao));
+  const parcelasQuitam = parcelasAvancam.filter(p => p.pagas + 1 >= p.totalParc);
+  const adicionaisQuitam = adicionaisAvancam.filter(p => p.pagas + 1 >= p.totalParc);
+
+  let resumo = `<b>${pagos.length} cartão(ões) pago(s):</b> ${nomesPagos.join(', ')}<br><br>`;
+  resumo += `✅ Fatura zerada e status reaberto para todos os cartões pagos<br>`;
+  if (parcelasAvancam.length > 0)
+    resumo += `📦 ${parcelasAvancam.length} parcelamento(s) avançado(s) em 1x<br>`;
+  if (parcelasQuitam.length > 0)
+    resumo += `🏁 ${parcelasQuitam.length} parcelamento(s) quitado(s) e removido(s)<br>`;
+  if (adicionaisAvancam.length > 0)
+    resumo += `👤 ${adicionaisAvancam.length} parcela(s) adicional(is) avançada(s) em 1x<br>`;
+  if (adicionaisQuitam.length > 0)
+    resumo += `🏁 ${adicionaisQuitam.length} parcela(s) adicional(is) quitada(s) e removida(s)<br>`;
+  if (abertos.length > 0)
+    resumo += `<br><span style="color:var(--red)">⚠️ Cartões em aberto NÃO serão alterados: ${abertos.map(c=>c.nome).join(', ')}</span>`;
+
+  document.getElementById('fecharMesResumo').innerHTML = resumo;
+  document.getElementById('modalFecharMes').classList.add('open');
+}
+
+function confirmarFecharMes() {
+  document.getElementById('modalFecharMes').classList.remove('open');
+
+  const nomesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
+
+  parcelas.forEach(p => {
+    if (p.pagas < p.totalParc && nomesPagos.has(p.cartao)) p.pagas++;
+  });
+  parcelas = parcelas.filter(p => p.pagas < p.totalParc);
+
+  adicionalParcelas.forEach(p => {
+    if (p.pagas < p.totalParc && nomesPagos.has(p.cartao)) p.pagas++;
+  });
+  adicionalParcelas = adicionalParcelas.filter(p => p.pagas < p.totalParc);
+
+  cartoes.forEach(c => {
+    if (c.status === 'pago') {
+      c.fatura = 0;
+      c.status = 'aberto';
+    }
+  });
+
+  save('fp_cartoes', cartoes);
+  save('fp_parcelas', parcelas);
+  save('fp_adicional_parcelas', adicionalParcelas);
+
+  renderCartoes();
+  renderParcelas();
+  renderAdicionais();
+  renderAlerts();
+  atualizarTotalMes();
+
+  // Feedback visual
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;';
+  box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">✅</div><p style="font-weight:700;margin:0 0 8px;color:#0d9488">Mês fechado com sucesso!</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Faturas zeradas, parcelas avançadas.</p>';
+  const btn = document.createElement('button');
+  btn.textContent = 'OK';
+  btn.style.cssText = 'padding:10px 24px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
+  btn.onclick = () => document.body.removeChild(ov);
+  box.appendChild(btn);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
 // Popula select de cartões no formulário de gastos
 function populateCartaoSelect() {
   const sel = document.getElementById('gCartao');
@@ -4459,6 +4592,43 @@ document.addEventListener('mouseout', e => {
   const popup = wrap.querySelector('.breakdown-popup');
   if (popup) popup.classList.remove('visible');
 });
+
+// ---- CARD PARCELAS POPUP ----
+function _posicionarCardPopup(wrap, popup) {
+  const rect = wrap.getBoundingClientRect();
+  const popupWidth = 300;
+  let top = rect.bottom + 8;
+  let left = rect.left;
+  if (left + popupWidth > window.innerWidth - 12) left = window.innerWidth - popupWidth - 12;
+  if (top + 220 > window.innerHeight) top = rect.top - 8 - (popup.offsetHeight || 220);
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+}
+document.addEventListener('mouseover', e => {
+  const wrap = e.target.closest('.card-item-wrap');
+  if (!wrap) return;
+  const popup = wrap.querySelector('.card-parcelas-popup');
+  if (!popup) return;
+  _posicionarCardPopup(wrap, popup);
+  popup.classList.add('visible');
+});
+document.addEventListener('mouseout', e => {
+  const wrap = e.target.closest('.card-item-wrap');
+  if (!wrap) return;
+  const related = e.relatedTarget;
+  if (related && wrap.contains(related)) return;
+  wrap.querySelector('.card-parcelas-popup')?.classList.remove('visible');
+});
+// Mobile: toque abre/fecha
+document.addEventListener('touchstart', e => {
+  const wrap = e.target.closest('.card-item-wrap');
+  if (!wrap) { document.querySelectorAll('.card-parcelas-popup.visible').forEach(p => p.classList.remove('visible')); return; }
+  const popup = wrap.querySelector('.card-parcelas-popup');
+  if (!popup) return;
+  const jaAberto = popup.classList.contains('visible');
+  document.querySelectorAll('.card-parcelas-popup.visible').forEach(p => p.classList.remove('visible'));
+  if (!jaAberto) { _posicionarCardPopup(wrap, popup); popup.classList.add('visible'); }
+}, { passive: true });
 
 
 // ════════════════════════════════════
@@ -4781,8 +4951,8 @@ atualizarTotalGlobal = function() {
   const totalParcelas    = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
   const totalFixas       = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0);
   const totalAdicionais  = adicionalParcelas.filter(p => p.pagas < p.totalParc).reduce((a,p) => a + p.mensal, 0);
-  const totalDespesas    = totalGastos + totalParcelas + totalFixas + totalAdicionais;
-  const suaParte         = totalGastos + totalParcelas + totalFixas; // sem adicionais
+  const totalDespesas    = totalParcelas + totalFixas + totalAdicionais;
+  const suaParte         = totalParcelas + totalFixas; // sem adicionais
   const totalReceitas    = receitas.reduce((a,r) => a + r.valor, 0);
   const saldo            = totalReceitas - suaParte;
 
@@ -4810,7 +4980,7 @@ function renderDashboard() {
   const totalGastosD    = gastos.filter(g => g.data.startsWith(mesStr)).reduce((a,g)=>a+g.valor,0);
   const totalParcelasD  = parcelas.filter(p=>p.pagas<p.totalParc).reduce((a,p)=>a+p.mensal,0);
   const totalFixasD     = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0);
-  const totalDespesa    = totalGastosD + totalParcelasD + totalFixasD;
+  const totalDespesa    = totalParcelasD + totalFixasD;
   const totalReceitaD   = receitas.reduce((a,r) => a + r.valor, 0);
   const saldoD          = totalReceitaD - totalDespesa;
   const totalFaturas    = cartoes.filter(c=>c.status!=='pago').reduce((a,c)=>a+c.fatura,0);
@@ -4849,7 +5019,7 @@ function renderDashboard() {
     const adicCartao = adicionalParcelas
       .filter(p => p.cartao === c.nome && p.pagas < p.totalParc)
       .reduce((a,p) => a + p.mensal, 0);
-    const totalCartao = c.fatura + parcelasCartao + adicCartao;
+    const totalCartao = parcelasCartao + adicCartao;
     if (totalCartao > 0)
       vencs.push({ nome: c.nome, sub: 'Cartão · dia '+c.venc, valor: fmt(totalCartao), dias: d });
   });
@@ -5428,6 +5598,5 @@ function closeMobMenu() {
   });
 })();
 </script>
-
 </body>
 </html>
