@@ -3847,11 +3847,17 @@ function atualizarTotalMes() {
   const mesAtual = _mesRefStr();
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
 
+  // Gastos do mês sem cartão (Dinheiro/Pix) + gastos em cartões não cadastrados
+  const nomesCartoes = new Set(cartoes.map(c => c.nome));
+  const gastosAvulsos = gastos
+    .filter(g => g.data.startsWith(mesAtual) && (!g.cartao || !nomesCartoes.has(g.cartao)))
+    .reduce((a,g) => a + g.valor, 0);
+
   const totalFatura = cartoes.reduce((a,c) => a + (c.status !== 'pago' ? c.fatura : 0), 0);
   const totalParcelas = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
   const totalFixas = contasFixas.reduce((a,cf) => a + cf.valor, 0) - contasFixas.filter(cfIsPago).reduce((a,cf) => a + cf.valor, 0);
 
-  const totalGeral = totalFatura + totalParcelas + totalFixas;
+  const totalGeral = gastosAvulsos + totalFatura + totalParcelas + totalFixas;
   const el = document.getElementById('totalMesVal');
   if (el) el.textContent = fmt(totalGeral);
 
