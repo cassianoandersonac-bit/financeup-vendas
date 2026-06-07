@@ -154,7 +154,7 @@ async function _saveComRetry(campo, val) {
   }
 }
 
-// ── Re-atribui variáveis globais do app com dados da nuvem ────
+// ── Re-atribui variáveis e re-renderiza o app com dados da nuvem ────
 function _reatribuirVariaveis() {
   if (typeof cartoes !== 'undefined')           cartoes           = load('fp_cartoes', cartoes);
   if (typeof parcelas !== 'undefined')          parcelas          = load('fp_parcelas', parcelas);
@@ -166,6 +166,20 @@ function _reatribuirVariaveis() {
   if (typeof receitas !== 'undefined')          receitas          = load('fp_receitas', receitas);
   if (typeof cofrinhos !== 'undefined')         cofrinhos         = load('fp_cofrinhos', cofrinhos);
   if (typeof metas !== 'undefined')             metas             = load('fp_metas', metas);
+
+  // Re-renderiza tudo com os dados da nuvem
+  if (typeof renderCartoes === 'function')      renderCartoes();
+  if (typeof renderParcelas === 'function')     renderParcelas();
+  if (typeof renderGastos === 'function')       renderGastos();
+  if (typeof renderInvest === 'function')       renderInvest();
+  if (typeof renderAdicionais === 'function')   renderAdicionais();
+  if (typeof renderContasFixas === 'function')  renderContasFixas();
+  if (typeof renderReceitas === 'function')     renderReceitas();
+  if (typeof renderCofrinhos === 'function')    renderCofrinhos();
+  if (typeof renderMetas === 'function')        renderMetas();
+  if (typeof renderAlerts === 'function')       renderAlerts();
+  if (typeof atualizarTotalMes === 'function')  atualizarTotalMes();
+  if (typeof populateCartaoSelect === 'function') populateCartaoSelect();
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────
