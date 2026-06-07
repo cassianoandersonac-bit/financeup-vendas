@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinanceUp">
 <script>window.FP_API_BASE = 'https://financas-backend-eight.vercel.app';</script>
-<script src="api-layer.js?v=1"></script>
+<script src="api-layer-vendas.js?v=1"></script>
 <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;FinanceUp&quot;,&quot;short_name&quot;:&quot;FinanceUp&quot;,&quot;description&quot;:&quot;Controle financeiro pessoal&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230d9488&quot;,&quot;theme_color&quot;:&quot;%230d9488&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230d9488'/%3E%3Crect x='80' y='300' width='80' height='132' rx='12' fill='rgba(255,255,255,0.5)'/%3E%3Crect x='216' y='220' width='80' height='212' rx='12' fill='rgba(255,255,255,0.75)'/%3E%3Crect x='352' y='140' width='80' height='292' rx='12' fill='white'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <script>
 if ('serviceWorker' in navigator) {
@@ -2513,7 +2513,7 @@ function reRenderAll() {
 }
 
 // ---- STORAGE ----
-// load() e save() são providos pelo api-layer.js (salvam na nuvem)
+// load() e save() são providos pelo api-layer-vendas.js (nuvem com fallback offline)
 
 // ── DADOS DEMO — substitua pelos seus ao começar a usar ──
 const _BACKUP_VERSION = 'demo-v1';
