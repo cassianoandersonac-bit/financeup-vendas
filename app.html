@@ -1735,6 +1735,20 @@ input[type=file] { display: none; }
   <!-- CATEGORIAS -->
   <div class="section" id="sec-categorias">
     <div class="summary-row" id="sumCategorias"></div>
+
+    <!-- GRÁFICO DE ROSCA -->
+    <div id="donutWrap" style="display:none;flex-direction:column;align-items:center;margin:16px 0 24px;">
+      <div style="position:relative;width:220px;height:220px;">
+        <canvas id="donutChart" width="220" height="220"></canvas>
+        <div id="donutCenter" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+          <div id="donutCenterLabel" style="font-size:0.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Total</div>
+          <div id="donutCenterValue" style="font-size:1.4rem;font-weight:800;color:var(--text)"></div>
+        </div>
+      </div>
+      <!-- Legenda -->
+      <div id="donutLegenda" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;max-width:320px;"></div>
+    </div>
+
     <div class="section-header" style="margin-top:8px">
       <div class="section-title">Uso por Categoria</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -3109,6 +3123,103 @@ function initCatFiltros() {
   });
 }
 
+function _renderDonut(porCat, totalGeral) {
+  const wrap = document.getElementById('donutWrap');
+  const canvas = document.getElementById('donutChart');
+  const legendaEl = document.getElementById('donutLegenda');
+  if (!canvas) return;
+
+  const fatias = Object.entries(porCat)
+    .filter(([,v]) => v > 0)
+    .sort((a,b) => b[1]-a[1]);
+
+  if (!fatias.length || totalGeral === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+
+  document.getElementById('donutCenterValue').textContent = fmt(totalGeral);
+  document.getElementById('donutCenterLabel').textContent = 'Total';
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const R = 90, r = 54; // raio externo e interno (rosca)
+  const GAP = 0.025; // espaço entre fatias (rad)
+
+  ctx.clearRect(0, 0, W, H);
+
+  let ativo = -1; // índice da fatia em foco (hover/clique)
+
+  function draw(hovIdx) {
+    ctx.clearRect(0, 0, W, H);
+    let start = -Math.PI / 2;
+    fatias.forEach(([cat, val], i) => {
+      const angle = (val / totalGeral) * (2 * Math.PI) - GAP;
+      const color = CAT_COLORS[cat] || '#94a3b8';
+      const isHov = i === hovIdx;
+      const Ro = isHov ? R + 8 : R;
+      const ri = isHov ? r - 4 : r;
+
+      ctx.beginPath();
+      ctx.moveTo(cx + ri * Math.cos(start + GAP/2), cy + ri * Math.sin(start + GAP/2));
+      ctx.arc(cx, cy, Ro, start + GAP/2, start + angle);
+      ctx.arc(cx, cy, ri, start + angle, start + GAP/2, true);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = isHov ? 1 : 0.88;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      start += angle + GAP;
+    });
+  }
+
+  draw(-1);
+
+  // Hover / clique
+  function hitTest(ex, ey) {
+    const rect = canvas.getBoundingClientRect();
+    const x = ex - rect.left - cx, y = ey - rect.top - cy;
+    const dist = Math.sqrt(x*x + y*y);
+    if (dist < r - 4 || dist > R + 10) return -1;
+    let angle = Math.atan2(y, x);
+    if (angle < -Math.PI/2) angle += 2 * Math.PI;
+    angle += Math.PI/2;
+    let start = 0;
+    for (let i = 0; i < fatias.length; i++) {
+      const sweep = (fatias[i][1] / totalGeral) * (2 * Math.PI);
+      if (angle >= start && angle < start + sweep) return i;
+      start += sweep;
+    }
+    return -1;
+  }
+
+  canvas.onmousemove = e => {
+    const idx = hitTest(e.clientX, e.clientY);
+    if (idx !== ativo) {
+      ativo = idx;
+      draw(idx);
+      if (idx >= 0) {
+        const [cat, val] = fatias[idx];
+        document.getElementById('donutCenterLabel').textContent = CAT_EMOJIS[cat] + ' ' + CAT_LABELS[cat];
+        document.getElementById('donutCenterValue').textContent = fmt(val);
+      } else {
+        document.getElementById('donutCenterLabel').textContent = 'Total';
+        document.getElementById('donutCenterValue').textContent = fmt(totalGeral);
+      }
+    }
+  };
+  canvas.onmouseleave = () => { ativo = -1; draw(-1); document.getElementById('donutCenterLabel').textContent='Total'; document.getElementById('donutCenterValue').textContent=fmt(totalGeral); };
+  canvas.ontouchstart = e => { e.preventDefault(); const t = e.touches[0]; const idx = hitTest(t.clientX, t.clientY); if (idx>=0){ const [cat,val]=fatias[idx]; document.getElementById('donutCenterLabel').textContent=CAT_EMOJIS[cat]+' '+CAT_LABELS[cat]; document.getElementById('donutCenterValue').textContent=fmt(val); draw(idx); } };
+
+  // Legenda
+  legendaEl.innerHTML = fatias.map(([cat, val]) => `
+    <div style="display:flex;align-items:center;gap:5px;font-size:0.76rem;background:var(--surface2);border-radius:20px;padding:4px 10px;">
+      <span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></span>
+      <span style="color:var(--muted)">${CAT_EMOJIS[cat]||''} ${CAT_LABELS[cat]||cat}</span>
+      <span style="font-weight:700;color:var(--text)">${Math.round(val/totalGeral*100)}%</span>
+    </div>
+  `).join('');
+}
+
 function renderCategorias() {
   const mesFiltro   = document.getElementById('catFiltroMes').value;
   const cartaoFiltro = document.getElementById('catFiltroCartao').value;
@@ -3122,6 +3233,9 @@ function renderCategorias() {
   const porCat = {};
   CATS_ORDER.forEach(c => porCat[c] = 0);
   base.forEach(g => { porCat[g.cat] = (porCat[g.cat] || 0) + g.valor; });
+
+  // ---- Gráfico de rosca ----
+  _renderDonut(porCat, totalGeral);
 
   const topCats = CATS_ORDER.filter(c => porCat[c] > 0).sort((a,b) => porCat[b]-porCat[a]);
 
