@@ -2788,6 +2788,15 @@ function renderCartoes() {
   const sum = document.getElementById('sumCartoes');
 
   const mesAtual = _mesRefStr();
+
+  // Reseta para 'aberto' cartões pagos em mês diferente do atual
+  let resetouCartao = false;
+  cartoes.forEach(c => {
+    if (c.status === 'pago' && c.pagoMes && c.pagoMes !== mesAtual) {
+      c.status = 'aberto'; c.pagoMes = null; resetouCartao = true;
+    }
+  });
+  if (resetouCartao) save('fp_cartoes', cartoes);
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalFatura = cartoes.reduce((a,c) => a + (c.status !== 'pago' ? c.fatura : 0), 0);
   const totalParcelaMes = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
@@ -2885,8 +2894,8 @@ function renderCartoes() {
           <div class="card-bank">${c.banco} · Vence dia ${c.venc}</div>
         </div>
         <div style="text-align:right">
-          <div class="card-valor">${fmt(totalCartaoMes)}</div>
-          <div class="card-venc" style="font-size:0.72rem">gastos + parcelas</div>
+          <div class="card-valor">${c.status === 'pago' ? fmt(parcelaMes) : fmt(totalCartaoMes)}</div>
+          <div class="card-venc" style="font-size:0.72rem">${c.status === 'pago' ? 'prev. próximo mês' : 'gastos + parcelas'}</div>
           <div class="card-venc">${dLabel}</div>
         </div>
       </div>
@@ -2926,7 +2935,7 @@ function renderCartoes() {
 
 function marcarCartaoPago(id) {
   const c = cartoes.find(x=>x.id===id);
-  if (c) { c.status = 'pago'; save('fp_cartoes', cartoes); renderCartoes(); renderAlerts(); atualizarTotalMes(); }
+  if (c) { c.status = 'pago'; c.pagoMes = _mesRefStr(); save('fp_cartoes', cartoes); renderCartoes(); renderAlerts(); atualizarTotalMes(); }
 }
 function editarLimite(id) {
   const c = cartoes.find(x=>x.id===id);
