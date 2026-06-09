@@ -2924,8 +2924,10 @@ function renderCartoes() {
         </div>`;
       })()}
       <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
-        <button class="btn-pagar" onclick="editarLimite(${c.id})" style="border-color:var(--blue);color:var(--blue)">✏️ Editar</button>
-        ${c.status !== 'pago' ? `<button class="btn-pagar" onclick="marcarCartaoPago(${c.id})">✓ Marcar como Pago</button>` : `<button class="btn-pagar" onclick="reabrirCartao(${c.id})">↩ Reabrir</button>`}
+        ${c.status !== 'pago' ? `
+          <button class="btn-pagar" onclick="editarLimite(${c.id})" style="border-color:var(--blue);color:var(--blue)">✏️ Editar</button>
+          <button class="btn-pagar" onclick="marcarCartaoPago(${c.id})">✓ Registrar Pagamento</button>
+        ` : ''}
         <button class="btn-del" onclick="delCartao(${c.id})" title="Remover">🗑</button>
       </div>
     </div>`;
