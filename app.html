@@ -2790,13 +2790,18 @@ function renderCartoes() {
   const mesAtual = _mesRefStr();
 
   // Reseta para 'aberto' cartões pagos em mês diferente do atual
-  let resetouCartao = false;
+  let mudouCartao = false;
   cartoes.forEach(c => {
     if (c.status === 'pago' && c.pagoMes && c.pagoMes !== mesAtual) {
-      c.status = 'aberto'; c.pagoMes = null; resetouCartao = true;
+      c.status = 'aberto'; c.pagoMes = null; c.parcelasAvancadas = false; mudouCartao = true;
+    }
+    // Migração: avança parcelas de cartões já pagos que ainda não tiveram parcelas avançadas
+    if (c.status === 'pago' && c.pagoMes === mesAtual && !c.parcelasAvancadas) {
+      parcelas.forEach(p => { if (p.cartao === c.nome && p.pagas < p.totalParc) p.pagas++; });
+      c.parcelasAvancadas = true; mudouCartao = true;
     }
   });
-  if (resetouCartao) save('fp_cartoes', cartoes);
+  if (mudouCartao) { save('fp_cartoes', cartoes); save('fp_parcelas', parcelas); }
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalFatura = cartoes.reduce((a,c) => a + (c.status !== 'pago' ? c.fatura : 0), 0);
   const totalParcelaMes = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
@@ -2935,7 +2940,12 @@ function renderCartoes() {
 
 function marcarCartaoPago(id) {
   const c = cartoes.find(x=>x.id===id);
-  if (c) { c.status = 'pago'; c.pagoMes = _mesRefStr(); save('fp_cartoes', cartoes); renderCartoes(); renderAlerts(); atualizarTotalMes(); }
+  if (c) {
+    c.status = 'pago'; c.pagoMes = _mesRefStr(); c.parcelasAvancadas = true;
+    parcelas.forEach(p => { if (p.cartao === c.nome && p.pagas < p.totalParc) p.pagas++; });
+    save('fp_cartoes', cartoes); save('fp_parcelas', parcelas);
+    renderCartoes(); renderAlerts(); atualizarTotalMes();
+  }
 }
 function editarLimite(id) {
   const c = cartoes.find(x=>x.id===id);
