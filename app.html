@@ -2978,7 +2978,7 @@ function saveCartao() {
   if (!nome || !venc) { alert('Preencha nome e dia de vencimento.'); return; }
   cartoes.push({ id: nextId(cartoes), nome, banco, venc, limite, fatura, status });
   save('fp_cartoes', cartoes);
-  closeModal('cartao'); renderCartoes(); renderAlerts();
+  closeModal('cartao'); renderCartoes(); renderAlerts(); populateCartaoSelect();
 }
 
 // ---- PARCELAMENTOS ----
