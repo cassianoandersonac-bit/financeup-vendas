@@ -827,7 +827,14 @@ input[type=file] { display: none; }
 .empty-state { text-align: center; color: var(--muted2); padding: 36px 20px; font-size: 0.85rem; }
 
 /* CATEGORIAS */
-.cat-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.cat-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; }
+.cat-detail-list { max-height: 0; overflow: hidden; transition: max-height .35s ease; background: var(--surface2); border-top: 0px solid var(--border); }
+.cat-block:hover .cat-detail-list, .cat-block.cat-expanded .cat-detail-list { max-height: 600px; border-top: 1px solid var(--border); }
+.cat-detail-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 17px; border-bottom: 1px solid var(--border); font-size: 0.76rem; gap: 8px; flex-wrap: wrap; }
+.cat-detail-item:last-child { border-bottom: none; }
+.cat-detail-desc { flex: 1; color: var(--text2); font-weight: 500; min-width: 100px; }
+.cat-detail-meta { color: var(--muted2); font-size: 0.68rem; white-space: nowrap; }
+.cat-detail-val  { color: var(--text); font-weight: 700; white-space: nowrap; }
 .cat-block-header { display: flex; justify-content: space-between; align-items: center; padding: 13px 17px 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 7px; }
 .cat-block-title { font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 7px; color: var(--text); }
 .cat-block-total { font-size: 0.88rem; font-weight: 800; color: var(--teal); }
@@ -3323,8 +3330,19 @@ function renderCategorias() {
           </div>`;
       }).join('');
 
+      const detailItems = gastoscat.sort((a,b) => b.valor - a.valor).map(g => {
+        const dataFmt = g.data ? g.data.split('-').reverse().join('/') : '';
+        const cartaoTag = g.cartao ? `<span class="cat-detail-meta">💳 ${g.cartao}</span>` : `<span class="cat-detail-meta">💵 Dinheiro/Pix</span>`;
+        return `<div class="cat-detail-item">
+          <span class="cat-detail-desc">${g.desc || '—'}</span>
+          ${cartaoTag}
+          <span class="cat-detail-meta">${dataFmt}</span>
+          <span class="cat-detail-val">${fmt(g.valor)}</span>
+        </div>`;
+      }).join('');
+
       return `
-        <div class="cat-block">
+        <div class="cat-block" onclick="this.classList.toggle('cat-expanded')">
           <div class="cat-block-header">
             <div class="cat-block-title">
               <span style="background:${CAT_BG[cat]};color:${CAT_COLORS[cat]};border-radius:8px;padding:4px 10px;font-size:0.85rem">${CAT_EMOJIS[cat]} ${CAT_LABELS[cat]}</span>
@@ -3335,6 +3353,7 @@ function renderCategorias() {
             </div>
           </div>
           ${rows}
+          <div class="cat-detail-list">${detailItems}</div>
         </div>`;
     }).join('');
   }
