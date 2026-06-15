@@ -2139,6 +2139,22 @@ input[type=file] { display: none; }
   </div>
 </div>
 
+<!-- MODAL EDITAR CARTÃO -->
+<div class="modal-overlay" id="modalEditCartao">
+  <div class="modal">
+    <h3>Editar Cartão</h3>
+    <div class="modal-fields">
+      <div class="field"><label>Cartão</label><input id="ec_nome" readonly style="opacity:0.6;cursor:default"></div>
+      <div class="field"><label>Limite Total (R$)</label><input type="number" id="ec_limite" placeholder="0,00" step="0.01"></div>
+      <div class="field"><label>Fatura Atual (R$)</label><input type="number" id="ec_fatura" placeholder="0,00" step="0.01"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editCartao')">Cancelar</button>
+      <button class="btn-save" onclick="saveEditCartao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PARCELAMENTO -->
 <div class="modal-overlay" id="modalParcela">
   <div class="modal">
@@ -2944,19 +2960,25 @@ function marcarCartaoPago(id) {
     c.status = 'pago'; c.pagoMes = _mesRefStr(); c.parcelasAvancadas = true;
     parcelas.forEach(p => { if (p.cartao === c.nome && p.pagas < p.totalParc) p.pagas++; });
     save('fp_cartoes', cartoes); save('fp_parcelas', parcelas);
-    renderCartoes(); renderAlerts(); atualizarTotalMes();
+    renderCartoes(); renderParcelas(); renderAlerts(); atualizarTotalMes();
   }
 }
 function editarLimite(id) {
   const c = cartoes.find(x=>x.id===id);
   if (!c) return;
-  const novoLimite = prompt('Limite total do ' + c.nome + ' (R$):', c.limite);
-  if (novoLimite === null) return;
-  const novaFatura = prompt('Fatura atual do ' + c.nome + ' (R$):', c.fatura);
-  if (novaFatura === null) return;
-  c.limite = parseFloat(String(novoLimite).replace(',','.')) || 0;
-  c.fatura = parseFloat(String(novaFatura).replace(',','.')) || 0;
+  document.getElementById('ec_nome').value = c.nome;
+  document.getElementById('ec_limite').value = c.limite || 0;
+  document.getElementById('ec_fatura').value = c.fatura || 0;
+  openModal('editCartao', id);
+}
+function saveEditCartao() {
+  const id = _editId['editCartao'];
+  const c = cartoes.find(x=>x.id===id);
+  if (!c) return;
+  c.limite = parseFloat(String(document.getElementById('ec_limite').value).replace(',','.')) || 0;
+  c.fatura = parseFloat(String(document.getElementById('ec_fatura').value).replace(',','.')) || 0;
   save('fp_cartoes', cartoes);
+  closeModal('editCartao');
   renderCartoes(); renderAlerts();
 }
 function reabrirCartao(id) {
@@ -3442,7 +3464,7 @@ function delGasto(id) {
 
 // ---- MODAIS ----
 function openModal(type, id = null) {
-  const ids = { cartao: 'modalCartao', parcela: 'modalParcela', invest: 'modalInvest', gdriveSetup: 'modalGDriveSetup', adicionalParcela: 'modalAdicionalParcela', adicionalGasto: 'modalAdicionalGasto', editGasto: 'modalEditGasto', contaFixa: 'modalContaFixa' };
+  const ids = { cartao: 'modalCartao', editCartao: 'modalEditCartao', parcela: 'modalParcela', invest: 'modalInvest', gdriveSetup: 'modalGDriveSetup', adicionalParcela: 'modalAdicionalParcela', adicionalGasto: 'modalAdicionalGasto', editGasto: 'modalEditGasto', contaFixa: 'modalContaFixa' };
   _editId[type] = id;
   document.getElementById(ids[type]).classList.add('open');
 
@@ -3596,7 +3618,7 @@ function openModal(type, id = null) {
   }
 }
 function closeModal(type) {
-  const ids = { cartao: 'modalCartao', parcela: 'modalParcela', invest: 'modalInvest', gdriveSetup: 'modalGDriveSetup', adicionalParcela: 'modalAdicionalParcela', adicionalGasto: 'modalAdicionalGasto', editGasto: 'modalEditGasto', contaFixa: 'modalContaFixa' };
+  const ids = { cartao: 'modalCartao', editCartao: 'modalEditCartao', parcela: 'modalParcela', invest: 'modalInvest', gdriveSetup: 'modalGDriveSetup', adicionalParcela: 'modalAdicionalParcela', adicionalGasto: 'modalAdicionalGasto', editGasto: 'modalEditGasto', contaFixa: 'modalContaFixa' };
   document.getElementById(ids[type]).classList.remove('open');
   if (_editId[type] !== undefined) _editId[type] = null;
 }
