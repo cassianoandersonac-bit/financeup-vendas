@@ -1532,6 +1532,7 @@ input[type=file] { display: none; }
     <option value="adicionais">👥 Adicionais</option>
     <option value="historico">📊 Histórico</option>
     <option value="projecao">📅 Projeção</option>
+    <option value="relatorio">📋 Relatório</option>
     <option value="notas">📌 Anotações</option>
   </select>
 </div>
@@ -1563,6 +1564,7 @@ input[type=file] { display: none; }
   <div class="sidebar-section">Análise</div>
   <button class="tab-btn" onclick="switchTab('historico',this)"><span class="tab-icon">📊</span> Histórico</button>
   <button class="tab-btn" onclick="switchTab('projecao',this)"><span class="tab-icon">📅</span> Projeção</button>
+  <button class="tab-btn" onclick="switchTab('relatorio',this)"><span class="tab-icon">📋</span> Relatório</button>
 </nav>
 
 <div class="main-area">
@@ -1943,6 +1945,10 @@ input[type=file] { display: none; }
   </div>
 
   <!-- HISTÓRICO -->
+  <div class="section" id="sec-relatorio">
+    <div id="relatorioContent"></div>
+  </div>
+
   <div class="section" id="sec-historico">
     <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--text);margin-bottom:4px">Histórico de Meses</div>
     <div style="font-size:0.82rem;color:var(--muted);margin-bottom:20px">Resumo dos gastos dos últimos meses</div>
@@ -2546,6 +2552,7 @@ function reRenderAll() {
   else if (id === 'sec-receitas') renderReceitas();
   else if (id === 'sec-projecao') renderProjecao();
   else if (id === 'sec-historico') renderHistorico();
+  else if (id === 'sec-relatorio') renderRelatorio();
   else if (id === 'sec-invest') renderInvest();
 }
 
@@ -2771,6 +2778,7 @@ function switchTab(tab, btn) {
   if (tab === 'cofrinhos') { renderCofrinhos(); }
   if (tab === 'metas') { renderMetas(); }
   if (tab === 'historico') { renderHistorico(); }
+  if (tab === 'relatorio') { renderRelatorio(); }
   if (tab === 'gastos') { renderGastos(); }
   if (tab === 'parcelas') { renderParcelas(); }
   if (tab === 'dashboard') { renderDashboard(); document.getElementById('sec-cartoes')?.classList.add('active'); renderCartoes(); }
@@ -5769,6 +5777,145 @@ function closeMobMenu() {
     document.getElementById('_pwaBanner').style.display = 'none';
   });
 })();
+
+// ── RELATÓRIO ──
+function renderRelatorio() {
+  const el = document.getElementById('relatorioContent');
+  if (!el) return;
+
+  const mesAtual = _mesRefStr();
+  const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  const gastosAvulsosMes  = gastos.filter(g => g.data.startsWith(mesAtual)).reduce((a,g) => a+g.valor, 0);
+  const parcelasMes       = parcelas.filter(p => p.pagas < p.totalParc).reduce((a,p) => a+p.mensal, 0);
+  const fixasMes          = contasFixas.reduce((a,cf) => a+cf.valor, 0);
+  const faturaMes         = cartoes.reduce((a,c) => a+c.fatura, 0);
+  const totalDespesas     = gastosAvulsosMes + parcelasMes + fixasMes;
+  const totalReceitas     = receitas.reduce((a,r) => a+r.valor, 0);
+  const balanco           = totalReceitas - totalDespesas;
+
+  const mesesAno = Array.from({length:12}, (_,i) => `${anoRef}-${String(i+1).padStart(2,'0')}`);
+  const gastosPorMes = mesesAno.map(m => gastos.filter(g => g.data.startsWith(m)).reduce((a,g) => a+g.valor, 0));
+  const maxGasto = Math.max(...gastosPorMes, 1);
+
+  const CAT_COR = {
+    alimentacao:'#f97316', mercado:'#0d9488', saude:'#e11d48',
+    transporte:'#2563eb', lazer:'#7c3aed', educacao:'#d97706',
+    moradia:'#059669', vestuario:'#ec4899', outros:'#6b7280',
+    assinaturas:'#8b5cf6', financiamento:'#1d4ed8', pets:'#84cc16',
+    presentes:'#f43f5e', viagem:'#06b6d4'
+  };
+  const gastosDoMes = gastos.filter(g => g.data.startsWith(mesAtual));
+  const catMap = {};
+  gastosDoMes.forEach(g => { catMap[g.cat] = (catMap[g.cat]||0) + g.valor; });
+  const topCats = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+  const maxCat  = topCats.length ? topCats[0][1] : 1;
+
+  const corBalanco  = balanco >= 0 ? 'var(--green)' : 'var(--red)';
+  const nomeMesAtual = new Date(anoRef, mesRef, 1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+
+  el.innerHTML = `
+    <!-- NAVEGAÇÃO DO MÊS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
+      <button onclick="mudarMesRef(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:1.1rem;font-family:'DM Sans',sans-serif" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">‹</button>
+      <div style="text-align:center">
+        <div style="font-size:1rem;font-weight:700;color:var(--accent);text-transform:capitalize">${nomeMesAtual}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Relatório Financeiro</div>
+      </div>
+      <button onclick="mudarMesRef(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:1.1rem;font-family:'DM Sans',sans-serif" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">›</button>
+    </div>
+
+    <!-- RESUMO DO MÊS -->
+    <div style="margin-bottom:28px">
+      <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Resumo — <span style="color:var(--accent);text-transform:capitalize">${nomeMesAtual}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        ${[
+          {label:'Receitas',   val:totalReceitas,     cor:'var(--green)',  icon:'💰'},
+          {label:'Gastos',     val:gastosAvulsosMes,  cor:'var(--red)',    icon:'🛒'},
+          {label:'Parcelas',   val:parcelasMes,       cor:'var(--accent)', icon:'📦'},
+          {label:'Fixas',      val:fixasMes,          cor:'var(--blue)',   icon:'🏠'},
+          {label:'Fatura',     val:faturaMes,         cor:'var(--accent2)',icon:'💳'},
+          {label:'Balanço',    val:balanco,           cor:corBalanco,      icon: balanco>=0?'✅':'⚠️'},
+        ].map(c => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${c.icon} ${c.label}</div>
+            <div style="font-size:1.15rem;font-weight:700;color:${c.cor};margin-top:6px">${fmt(c.val)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- BARRA DE PROPORÇÃO DESPESAS -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:28px">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">Composição das despesas</div>
+      ${totalDespesas > 0 ? (() => {
+        const itens = [
+          {label:'Gastos avulsos', val:gastosAvulsosMes, cor:'#f97316'},
+          {label:'Parcelas',       val:parcelasMes,      cor:'var(--accent)'},
+          {label:'Fixas',          val:fixasMes,         cor:'var(--blue)'},
+        ].filter(i => i.val > 0);
+        return `
+          <div style="display:flex;height:12px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:10px">
+            ${itens.map(i => `<div style="flex:${i.val};background:${i.cor};min-width:2px" title="${i.label}: ${fmt(i.val)}"></div>`).join('')}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            ${itens.map(i => `<div style="display:flex;align-items:center;gap:5px;font-size:0.75rem;color:var(--muted)">
+              <div style="width:10px;height:10px;border-radius:50%;background:${i.cor}"></div>
+              ${i.label} <span style="color:var(--text);font-weight:600">${fmt(i.val)}</span>
+              <span style="color:var(--muted)">(${totalDespesas>0?(i.val/totalDespesas*100).toFixed(0):0}%)</span>
+            </div>`).join('')}
+          </div>`;
+      })() : '<div style="color:var(--muted);font-size:0.82rem">Sem despesas registradas.</div>'}
+    </div>
+
+    <!-- COMPARATIVO ANUAL -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:28px">
+      <div style="font-weight:700;font-size:0.95rem;color:var(--text);margin-bottom:4px">📅 Comparativo Anual — ${anoRef}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">Clique em um mês para ver o relatório</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:4px">
+        ${mesesAno.map((m, i) => {
+          const val   = gastosPorMes[i];
+          const pct   = (val / maxGasto * 100).toFixed(0);
+          const isMes = m === mesAtual;
+          const cor   = isMes ? 'var(--accent)' : (val > 0 ? '#f87171' : 'var(--border)');
+          const [yy, mm] = m.split('-').map(Number);
+          return `
+            <div onclick="anoRef=${yy};mesRef=${mm-1};_atualizarHeaderMesRef();reRenderAll()" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border-radius:6px;padding:2px 1px;transition:background .15s" title="${nomesMes[i]}/${yy}: ${fmt(val)}" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+              <div style="font-size:0.6rem;color:${isMes?'var(--accent)':'var(--muted)'};white-space:nowrap;font-weight:${isMes?'700':'400'}">${val>0?fmt(val).replace('R$',''):'–'}</div>
+              <div style="width:100%;background:${cor};border-radius:4px 4px 0 0;min-height:4px">
+                <div style="height:${Math.max(Number(pct),val>0?4:0)}px;background:${cor};border-radius:4px 4px 0 0;width:100%"></div>
+              </div>
+              <div style="font-size:0.65rem;color:${isMes?'var(--accent)':'var(--muted)'};font-weight:${isMes?'700':'400'}">${nomesMes[i]}</div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px">
+        <div style="font-size:0.78rem;color:var(--muted)">Total no ano: <span style="color:var(--red);font-weight:700">${fmt(gastosPorMes.reduce((a,v)=>a+v,0))}</span></div>
+        <div style="font-size:0.78rem;color:var(--muted)">Média mensal: <span style="color:var(--text);font-weight:700">${fmt(gastosPorMes.filter(v=>v>0).reduce((a,v,_,arr)=>a+v/arr.length,0))}</span></div>
+        <div style="font-size:0.78rem;color:var(--muted)">Maior mês: <span style="color:var(--accent);font-weight:700">${nomesMes[gastosPorMes.indexOf(Math.max(...gastosPorMes))]}</span></div>
+      </div>
+    </div>
+
+    <!-- POR CATEGORIA NO MÊS -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:28px">
+      <div style="font-weight:700;font-size:0.95rem;color:var(--text);margin-bottom:4px">🗂️ Por Categoria — <span style="text-transform:capitalize;color:var(--accent)">${new Date(anoRef,mesRef,1).toLocaleDateString('pt-BR',{month:'long'})}</span></div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">${gastosDoMes.length} lançamentos · ${fmt(gastosAvulsosMes)} total</div>
+      ${topCats.length ? topCats.map(([cat, val]) => {
+        const pct = (val / maxCat * 100).toFixed(1);
+        const cor = CAT_COR[cat] || '#6b7280';
+        const emoji = (CAT_EMOJIS && CAT_EMOJIS[cat]) ? CAT_EMOJIS[cat] : '';
+        const label = (CAT_LABELS && CAT_LABELS[cat]) ? CAT_LABELS[cat] : cat;
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:110px;font-size:0.78rem;color:var(--text);white-space:nowrap">${emoji} ${label}</div>
+          <div style="flex:1;background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${cor};border-radius:4px"></div>
+          </div>
+          <div style="font-size:0.75rem;font-weight:600;color:var(--text);min-width:70px;text-align:right">${fmt(val)}</div>
+        </div>`;
+      }).join('') : '<div style="color:var(--muted);font-size:0.82rem">Nenhum gasto registrado neste mês.</div>'}
+    </div>
+  `;
+}
 </script>
 </body>
 </html>
