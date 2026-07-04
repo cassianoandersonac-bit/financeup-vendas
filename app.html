@@ -2686,6 +2686,10 @@ let financiamentos = load('fp_financiamentos', []);
 let _editFinanciamentoId = null;
 let _pagamentoFinanciamentoId = null;
 
+function totalFinanciamentosMensal() {
+  return financiamentos.filter(f => f.pagas < f.totalParc).reduce((a,f) => a + f.mensal, 0);
+}
+
 // ---- RECEITAS ----
 const _defaultReceitas = [
   { id: 1, pessoa: 'eu',     tipo: 'salario',  desc: 'Salário',        valor: 0, data: `${ano}-${String(mes+1).padStart(2,'0')}-05`, recorrente: true },
@@ -2913,7 +2917,8 @@ function renderCartoes() {
   }).filter(x => x.total > 0);
 
   const fixasAberto = contasFixas.filter(cf => !cfIsPago(cf));
-  const totalFixasAberto = contasFixas.reduce((a,cf) => a + cf.valor, 0) - contasFixas.filter(cfIsPago).reduce((a,cf) => a + cf.valor, 0);
+  const financiamentosAtivos = financiamentos.filter(f => f.pagas < f.totalParc);
+  const totalFixasAberto = contasFixas.reduce((a,cf) => a + cf.valor, 0) - contasFixas.filter(cfIsPago).reduce((a,cf) => a + cf.valor, 0) + totalFinanciamentosMensal();
   const totalAdicionais = totalAdicionalParcelasMes + totalAdicionalGastosMes;
 
   // "Sua Parte" = fatura em aberto + parcelas em aberto + fixas em aberto (sem adicionais)
@@ -2930,9 +2935,10 @@ function renderCartoes() {
         ${x.parcelas > 0 ? `<div class="bp-sub" style="padding-left:26px"><span style="color:var(--muted)">↳ Parcelas</span><span>${fmt(x.parcelas)}</span></div>` : ''}
       `).join('')}
     ` : ''}
-    ${fixasAberto.length ? `
+    ${(fixasAberto.length || financiamentosAtivos.length) ? `
       <div class="bp-row" style="color:var(--text);font-weight:500;margin-top:4px"><span>🏠 Contas Fixas</span><span>${fmt(totalFixasAberto)}</span></div>
       ${fixasAberto.map(cf => `<div class="bp-sub"><span>${cf.nome}</span><span style="color:var(--blue)">${fmt(cf.valor)}</span></div>`).join('')}
+      ${financiamentosAtivos.map(f => `<div class="bp-sub"><span>🏦 ${f.nome}</span><span style="color:var(--blue)">${fmt(f.mensal)}</span></div>`).join('')}
     ` : ''}
     ${totalAdicionais > 0 ? `
       <div class="bp-row" style="margin-top:4px"><span>👥 Adicionais (excluídos)</span><span style="color:#a0a0c0">− ${fmt(totalAdicionais)}</span></div>
@@ -4233,7 +4239,7 @@ function atualizarTotalMes() {
 
   const totalFatura = cartoes.reduce((a,c) => a + (c.status !== 'pago' ? c.fatura : 0), 0);
   const totalParcelas = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
-  const totalFixas = contasFixas.reduce((a,cf) => a + cf.valor, 0) - contasFixas.filter(cfIsPago).reduce((a,cf) => a + cf.valor, 0);
+  const totalFixas = contasFixas.reduce((a,cf) => a + cf.valor, 0) - contasFixas.filter(cfIsPago).reduce((a,cf) => a + cf.valor, 0) + totalFinanciamentosMensal();
 
   const totalGeral = gastosAvulsos + totalFatura + totalParcelas + totalFixas;
   const el = document.getElementById('totalMesVal');
@@ -4248,7 +4254,7 @@ function atualizarTotalGlobal() {
   const totalGastos = gastos.filter(g => g.data.startsWith(mesAtual)).reduce((a,g) => a + g.valor, 0);
   const cartoesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalParcelas = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
-  const totalFixas = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0);
+  const totalFixas = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0) + totalFinanciamentosMensal();
   const totalGeral = totalParcelas + totalFixas;
 
   const totalReceitas = receitas.reduce((a,r) => {
@@ -4805,11 +4811,12 @@ function renderProjecao() {
     // pontual: só aparece se ainda não foi paga
     return cf.status !== 'pago';
   });
-  const totalFixasMes = fixasDoMes.reduce((a, cf) => a + cf.valor, 0);
+  const financiamentosAtivosMes = financiamentos.filter(f => (f.totalParc - f.pagas) > mesOffset);
+  const totalFixasMes = fixasDoMes.reduce((a, cf) => a + cf.valor, 0) + financiamentosAtivosMes.reduce((a, f) => a + f.mensal, 0);
   document.getElementById('projecaoFixaTotal').textContent = fmt(totalFixasMes);
 
   const listFixas = document.getElementById('projecaoFixasList');
-  if (!fixasDoMes.length) {
+  if (!fixasDoMes.length && !financiamentosAtivosMes.length) {
     listFixas.innerHTML = '<div class="empty-state" style="padding:16px 0;font-size:0.85rem">Nenhuma conta fixa prevista.</div>';
   } else {
     listFixas.innerHTML = fixasDoMes.map(cf => {
@@ -4826,7 +4833,17 @@ function renderProjecao() {
           <div style="font-size:0.72rem;color:var(--muted)">dia ${cf.diaVenc}</div>
         </div>
       </div>`;
-    }).join('');
+    }).join('') + financiamentosAtivosMes.map(f => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:${CF_CATS.financiamento.bg};color:${CF_CATS.financiamento.color};border-radius:8px;padding:3px 10px;font-size:0.8rem">🏦 Financiamento</span>
+          <span style="font-size:0.9rem;font-weight:500">${f.nome}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:1rem;font-weight:600;color:var(--blue)">${fmt(f.mensal)}</div>
+          <div style="font-size:0.72rem;color:var(--muted)">dia ${f.venc}</div>
+        </div>
+      </div>`).join('');
   }
 
   // ---- GASTOS já registrados naquele mês ----
@@ -4866,7 +4883,7 @@ function renderProjecao() {
   const mesAtualStr = `${ano}-${String(mes+1).padStart(2,'0')}`;
   const totalGastosAtual = gastos.filter(g => g.data.startsWith(mesAtualStr)).reduce((a,g)=>a+g.valor,0);
   const totalParcelasAtual = parcelas.filter(p=>p.pagas<p.totalParc).reduce((a,p)=>a+p.mensal,0);
-  const totalFixasAtual = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0);
+  const totalFixasAtual = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0) + totalFinanciamentosMensal();
   const totalAtual = totalGastosAtual + totalParcelasAtual + totalFixasAtual;
 
   const diff = totalSuaParteProjecao - totalAtual;
@@ -5325,7 +5342,7 @@ atualizarTotalGlobal = function() {
   const totalGastos      = gastos.filter(g => g.data.startsWith(mesAtual)).reduce((a,g) => a + g.valor, 0);
   const cartoesPagos     = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
   const totalParcelas    = parcelas.filter(p => p.pagas < p.totalParc && !cartoesPagos.has(p.cartao)).reduce((a,p) => a + p.mensal, 0);
-  const totalFixas       = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0);
+  const totalFixas       = contasFixas.filter(cf => !cfIsPago(cf)).reduce((a,cf) => a + cf.valor, 0) + totalFinanciamentosMensal();
   const totalAdicionais  = adicionalParcelas.filter(p => p.pagas < p.totalParc).reduce((a,p) => a + p.mensal, 0);
   const totalDespesas    = totalParcelas + totalFixas + totalAdicionais;
   const suaParte         = totalParcelas + totalFixas; // sem adicionais
@@ -5355,7 +5372,7 @@ function renderDashboard() {
   const mesStr = _mesRefStr();
   const totalGastosD    = gastos.filter(g => g.data.startsWith(mesStr)).reduce((a,g)=>a+g.valor,0);
   const totalParcelasD  = parcelas.filter(p=>p.pagas<p.totalParc).reduce((a,p)=>a+p.mensal,0);
-  const totalFixasD     = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0);
+  const totalFixasD     = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0) + totalFinanciamentosMensal();
   const totalDespesa    = totalParcelasD + totalFixasD;
   const totalReceitaD   = receitas.reduce((a,r) => a + r.valor, 0);
   const saldoD          = totalReceitaD - totalDespesa;
@@ -5444,12 +5461,17 @@ function renderDashboard() {
 
   // Fixas
   const fixasAbertas = contasFixas.filter(cf=>!cfIsPago(cf));
-  const totalFA = fixasAbertas.reduce((a,cf)=>a+cf.valor,0);
+  const financiamentosAtivosD = financiamentos.filter(f=>f.pagas<f.totalParc);
+  const totalFA = fixasAbertas.reduce((a,cf)=>a+cf.valor,0) + financiamentosAtivosD.reduce((a,f)=>a+f.mensal,0);
   document.getElementById('dashFixasTotal').textContent = fmt(totalFA);
   document.getElementById('dashFixasList').innerHTML = fixasAbertas.slice(0,5).map(cf=>`
     <div class="dash-list-item">
       <div><div class="dash-item-name">${cf.nome}</div><div class="dash-item-sub">Dia ${cf.diaVenc} · ${cf.recorrente?'Mensal':'Pontual'}</div></div>
       <span class="dash-item-val" style="color:var(--blue)">${fmt(cf.valor)}</span>
+    </div>`).join('') + financiamentosAtivosD.slice(0,5).map(f=>`
+    <div class="dash-list-item">
+      <div><div class="dash-item-name">🏦 ${f.nome}</div><div class="dash-item-sub">Dia ${f.venc} · Financiamento</div></div>
+      <span class="dash-item-val" style="color:var(--blue)">${fmt(f.mensal)}</span>
     </div>`).join('') || '<div class="empty-state" style="padding:20px">Nenhuma conta aberta</div>';
 }
 
@@ -5482,7 +5504,7 @@ function _renderDashChart() {
   const despesasPorMes = meses.map(m => {
     const gastosMes = gastos.filter(g=>g.data.startsWith(m.key)).reduce((a,g)=>a+g.valor,0);
     const parcelasMes = parcelas.filter(p=>p.pagas<p.totalParc).reduce((a,p)=>a+p.mensal,0);
-    const fixasMes = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0);
+    const fixasMes = contasFixas.filter(cf=>!cfIsPago(cf)).reduce((a,cf)=>a+cf.valor,0) + totalFinanciamentosMensal();
     // só soma parcelas e fixas no mês atual, outros meses só gastos
     if (m.key === _mesRefStr()) return gastosMes + parcelasMes + fixasMes;
     return gastosMes;
@@ -5597,9 +5619,12 @@ function buildDetailHTML() {
 
   // Contas fixas
   const fixasAbertas = contasFixas.filter(cf => !cfIsPago(cf));
-  const totalFixas = fixasAbertas.reduce((a, cf) => a + cf.valor, 0);
+  const financiamentosAtivosDp = financiamentos.filter(f => f.pagas < f.totalParc);
+  const totalFixas = fixasAbertas.reduce((a, cf) => a + cf.valor, 0) + financiamentosAtivosDp.reduce((a, f) => a + f.mensal, 0);
   const fixasLinhas = fixasAbertas.map(cf =>
     '<div class="dp-row"><span>' + cf.nome + '</span><span style="color:var(--blue)">' + fmt(cf.valor) + '</span></div>'
+  ).join('') + financiamentosAtivosDp.map(f =>
+    '<div class="dp-row"><span>🏦 ' + f.nome + '</span><span style="color:var(--blue)">' + fmt(f.mensal) + '</span></div>'
   ).join('');
 
   // Adicionais total (excluídos da sua parte)
@@ -5986,7 +6011,7 @@ function renderRelatorio() {
 
   const gastosAvulsosMes  = gastos.filter(g => g.data.startsWith(mesAtual)).reduce((a,g) => a+g.valor, 0);
   const parcelasMes       = parcelas.filter(p => p.pagas < p.totalParc).reduce((a,p) => a+p.mensal, 0);
-  const fixasMes          = contasFixas.reduce((a,cf) => a+cf.valor, 0);
+  const fixasMes          = contasFixas.reduce((a,cf) => a+cf.valor, 0) + totalFinanciamentosMensal();
   const faturaMes         = cartoes.reduce((a,c) => a+c.fatura, 0);
   const totalDespesas     = gastosAvulsosMes + parcelasMes + fixasMes;
   const totalReceitas     = receitas.reduce((a,r) => a+r.valor, 0);
