@@ -25,6 +25,7 @@ const KEY_MAP = {
   fp_receitas:           'receitas',
   fp_cofrinhos:          'cofrinhos',
   fp_metas:              'metas',
+  fp_financiamentos:     'financiamentos',
 };
 
 // ── Estado global ──────────────────────────────────────────────
@@ -166,10 +167,12 @@ function _reatribuirVariaveis() {
   if (typeof receitas !== 'undefined')          receitas          = load('fp_receitas', receitas);
   if (typeof cofrinhos !== 'undefined')         cofrinhos         = load('fp_cofrinhos', cofrinhos);
   if (typeof metas !== 'undefined')             metas             = load('fp_metas', metas);
+  if (typeof financiamentos !== 'undefined')    financiamentos    = load('fp_financiamentos', financiamentos);
 
   // Re-renderiza tudo com os dados da nuvem
   if (typeof renderCartoes === 'function')      renderCartoes();
   if (typeof renderParcelas === 'function')     renderParcelas();
+  if (typeof renderFinanciamentos === 'function') renderFinanciamentos();
   if (typeof renderGastos === 'function')       renderGastos();
   if (typeof renderInvest === 'function')       renderInvest();
   if (typeof renderAdicionais === 'function')   renderAdicionais();

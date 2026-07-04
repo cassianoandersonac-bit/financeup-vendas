@@ -1522,6 +1522,7 @@ input[type=file] { display: none; }
     <option value="dashboard">🏠 Início</option>
     <option value="cartoes">💳 Cartões</option>
     <option value="parcelas">📦 Parcelas</option>
+    <option value="financiamentos">🚗 Financiamentos</option>
     <option value="gastos">📝 Gastos</option>
     <option value="categorias">🏷️ Categorias</option>
     <option value="receitas">💰 Receitas</option>
@@ -1554,6 +1555,7 @@ input[type=file] { display: none; }
   <div class="sidebar-section">Crédito</div>
   <button class="tab-btn" onclick="switchTab('cartoes',this)"><span class="tab-icon">💳</span> Cartões</button>
   <button class="tab-btn" onclick="switchTab('parcelas',this)"><span class="tab-icon">📦</span> Parcelas</button>
+  <button class="tab-btn" onclick="switchTab('financiamentos',this)"><span class="tab-icon">🚗</span> Financiamentos</button>
   <button class="tab-btn" onclick="switchTab('adicionais',this)"><span class="tab-icon">👥</span> Adicionais</button>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section">Patrimônio</div>
@@ -1739,6 +1741,16 @@ input[type=file] { display: none; }
       <input type="text" id="buscaParcelas" placeholder="🔍 Buscar por nome ou cartão..." oninput="renderParcelas()">
     </div>
     <div class="cards-list" id="listParcelas"></div>
+  </div>
+
+  <!-- FINANCIAMENTOS -->
+  <div class="section" id="sec-financiamentos">
+    <div class="summary-row" id="sumFinanciamentos"></div>
+    <div class="section-header">
+      <div class="section-title">Financiamentos</div>
+      <button class="btn-add" onclick="openModalFinanciamento()">+ Novo Financiamento</button>
+    </div>
+    <div class="cards-list" id="listFinanciamentos"></div>
   </div>
 
   <!-- CATEGORIAS -->
@@ -2198,6 +2210,51 @@ input[type=file] { display: none; }
   </div>
 </div>
 
+<!-- MODAL FINANCIAMENTO -->
+<div class="modal-overlay" id="modalFinanciamento">
+  <div class="modal">
+    <h3 id="modalFinanciamentoTitle">Novo Financiamento</h3>
+    <div class="modal-fields">
+      <div class="field"><label>Descrição</label><input id="f_nome" placeholder="Ex: Financiamento do Carro"></div>
+      <div class="field"><label>Instituição / Banco</label><input id="f_instituicao" placeholder="Ex: Banco Bradesco"></div>
+      <div class="modal-row">
+        <div class="field"><label>Total de Parcelas</label><input type="number" id="f_total_parc" placeholder="Ex: 48" min="1"></div>
+        <div class="field"><label>Valor da Parcela (R$)</label><input type="number" id="f_mensal" placeholder="0,00" step="0.01"></div>
+      </div>
+      <div class="modal-row">
+        <div class="field"><label>Parcelas Já Pagas</label><input type="number" id="f_pagas" placeholder="Ex: 0" min="0" value="0"></div>
+        <div class="field"><label>Dia de Vencimento</label><input type="number" id="f_venc" placeholder="Ex: 10" min="1" max="31"></div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 14px;">
+        💡 Depois de cadastrar, use "Registrar Pagamento" a cada parcela paga. Se antecipar e conseguir desconto nos juros, informe o valor real pago naquela parcela.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModalFinanciamento()">Cancelar</button>
+      <button class="btn-save" onclick="saveFinanciamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REGISTRAR PAGAMENTO DE FINANCIAMENTO -->
+<div class="modal-overlay" id="modalPagamentoFinanc">
+  <div class="modal">
+    <h3>Registrar Pagamento</h3>
+    <div class="modal-fields">
+      <div style="font-size:0.85rem;color:var(--muted)">Parcela nº <span id="pf_numero"></span> de <span id="pf_total"></span></div>
+      <div class="field"><label>Valor Pago (R$)</label><input type="number" id="pf_valor_pago" step="0.01"></div>
+      <div class="field"><label>Data do Pagamento</label><input type="date" id="pf_data"></div>
+      <div style="font-size:0.78rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 14px;">
+        💡 Se você antecipou a parcela e conseguiu desconto nos juros, informe o valor real pago — a diferença é calculada automaticamente.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModalPagamentoFinanc()">Cancelar</button>
+      <button class="btn-save" onclick="confirmarPagamentoFinanciamento()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL INVESTIMENTO -->
 <div class="modal-overlay" id="modalInvest">
   <div class="modal">
@@ -2545,6 +2602,7 @@ function reRenderAll() {
   if (!active) return;
   const id = active.id;
   if (id === 'sec-parcelas') renderParcelas();
+  else if (id === 'sec-financiamentos') renderFinanciamentos();
   else if (id === 'sec-gastos') renderGastos();
   else if (id === 'sec-categorias') { initCatFiltros(); renderCategorias(); }
   else if (id === 'sec-fixas') renderContasFixas();
@@ -2624,6 +2682,9 @@ let adicionalParcelas = load('fp_adicional_parcelas', _defaultAdicionalParcelas)
 let adicionalGastos   = load('fp_adicional_gastos',   []);
 const _editId = { parcela: null, adicionalParcela: null, adicionalGasto: null, invest: null, gasto: null, contaFixa: null };
 let contasFixas = load('fp_contas_fixas', _defaultContasFixas);
+let financiamentos = load('fp_financiamentos', []);
+let _editFinanciamentoId = null;
+let _pagamentoFinanciamentoId = null;
 
 // ---- RECEITAS ----
 const _defaultReceitas = [
@@ -2764,7 +2825,7 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(n => n.classList.remove('active'));
   document.getElementById('sec-' + tab)?.classList.add('active');
   if (btn) btn.classList.add('active');
-  const titles = {cartoes:'Cartões de Crédito',parcelas:'Parcelamentos',gastos:'Gastos Diários',categorias:'Categorias',invest:'Investimentos',fixas:'Contas Fixas',cofrinhos:'Meus Cofrinhos',metas:'Metas Financeiras',adicionais:'Adicionais',receitas:'Receitas',projecao:'Projeção Financeira',notas:'Anotações'};
+  const titles = {cartoes:'Cartões de Crédito',parcelas:'Parcelamentos',financiamentos:'Financiamentos',gastos:'Gastos Diários',categorias:'Categorias',invest:'Investimentos',fixas:'Contas Fixas',cofrinhos:'Meus Cofrinhos',metas:'Metas Financeiras',adicionais:'Adicionais',receitas:'Receitas',projecao:'Projeção Financeira',notas:'Anotações'};
   const el = document.getElementById('pageTitle');
   if (el && titles[tab]) el.textContent = titles[tab];
   // close mobile sidebar (elements may not exist in all builds)
@@ -2781,6 +2842,7 @@ function switchTab(tab, btn) {
   if (tab === 'relatorio') { renderRelatorio(); }
   if (tab === 'gastos') { renderGastos(); }
   if (tab === 'parcelas') { renderParcelas(); }
+  if (tab === 'financiamentos') { renderFinanciamentos(); }
   if (tab === 'dashboard') { renderDashboard(); document.getElementById('sec-cartoes')?.classList.add('active'); renderCartoes(); }
   if (tab === 'invest') { renderInvest(); }
   if (tab === 'notas') { renderNotas(); }
@@ -3111,6 +3173,140 @@ function saveParcela() {
   }
   save('fp_parcelas', parcelas);
   closeModal('parcela'); renderParcelas(); renderCartoes(); renderAlerts();
+}
+
+// ---- FINANCIAMENTOS ----
+function renderFinanciamentos() {
+  const list = document.getElementById('listFinanciamentos');
+  const sum = document.getElementById('sumFinanciamentos');
+
+  const totalRestante = financiamentos.reduce((a,f) => a + ((f.totalParc - f.pagas) * f.mensal), 0);
+  const totalMensal = financiamentos.filter(f => f.pagas < f.totalParc).reduce((a,f) => a + f.mensal, 0);
+  const totalEconomizado = financiamentos.reduce((a,f) => a + (f.pagamentos||[]).reduce((s,p)=>s+(p.desconto>0?p.desconto:0),0), 0);
+
+  sum.innerHTML = `
+    <div class="sum-card"><div class="label">Débito Restante</div><div class="value red">${fmt(totalRestante)}</div></div>
+    <div class="sum-card"><div class="label">Parcelas este Mês</div><div class="value yellow">${fmt(totalMensal)}</div></div>
+    <div class="sum-card"><div class="label">Financiamentos</div><div class="value blue">${financiamentos.length}</div></div>
+    <div class="sum-card"><div class="label">Economizado c/ Antecipação</div><div class="value green">${fmt(totalEconomizado)}</div></div>
+  `;
+
+  if (!financiamentos.length) { list.innerHTML = '<div class="empty-state">Nenhum financiamento cadastrado.</div>'; return; }
+
+  list.innerHTML = financiamentos.map(f => {
+    const restantes = f.totalParc - f.pagas;
+    const pct = Math.min(100, (f.pagas / f.totalParc) * 100);
+    const concluido = restantes <= 0;
+    const d = diasParaVencer(f.venc);
+    const dLabel = concluido ? 'Quitado! 🎉' : d <= 0 ? 'Vence hoje!' : `Vence em ${d} dia${d>1?'s':''}`;
+    const pagamentos = f.pagamentos || [];
+    const antecipacoes = pagamentos.filter(p => p.desconto > 0);
+    const economizado = antecipacoes.reduce((s,p)=>s+p.desconto,0);
+
+    return `
+    <div class="parcela-item">
+      <div class="parcela-top">
+        <div>
+          <div class="parcela-name">🚗 ${f.nome} ${f.instituicao ? `<span style="font-size:0.72rem;color:var(--blue);font-weight:500;margin-left:6px">🏦 ${f.instituicao}</span>` : ''}</div>
+          <div class="parcela-sub">Vence dia ${f.venc} · ${dLabel}</div>
+        </div>
+        <div class="parcela-valor">
+          <div class="total">${fmt(f.mensal * f.totalParc)} total</div>
+          <div class="mensal">${fmt(f.mensal)}/mês</div>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>${f.pagas} de ${f.totalParc} parcelas pagas · faltam <span style="color:var(--accent)">${restantes}</span></span>
+          <span>${Math.round(pct)}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill ${concluido?'completo':''}" style="width:${pct}%"></div></div>
+      </div>
+      ${economizado > 0 ? `<div style="font-size:0.78rem;color:var(--green);margin-top:6px">💰 Economizado com antecipações: ${fmt(economizado)}</div>` : ''}
+      ${antecipacoes.length ? `<div style="font-size:0.74rem;color:var(--muted);margin-top:4px">${antecipacoes.map(p=>`Parcela ${p.numero}: pago ${fmt(p.valorPago)} (desconto ${fmt(p.desconto)})`).join(' · ')}</div>` : ''}
+      <div class="parcela-actions">
+        ${!concluido ? `<button class="btn-pagar" onclick="abrirPagamentoFinanciamento(${f.id})">✓ Registrar Pagamento</button>` : ''}
+        <button class="btn-pagar" onclick="openModalFinanciamento(${f.id})" style="border-color:var(--blue);color:var(--blue)">✏️ Editar</button>
+        <button class="btn-del" onclick="delFinanciamento(${f.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModalFinanciamento(id = null) {
+  _editFinanciamentoId = id;
+  const editing = id !== null;
+  document.getElementById('modalFinanciamentoTitle').textContent = editing ? 'Editar Financiamento' : 'Novo Financiamento';
+  if (editing) {
+    const f = financiamentos.find(x => x.id === id);
+    if (f) {
+      document.getElementById('f_nome').value = f.nome;
+      document.getElementById('f_instituicao').value = f.instituicao || '';
+      document.getElementById('f_total_parc').value = f.totalParc;
+      document.getElementById('f_mensal').value = f.mensal;
+      document.getElementById('f_pagas').value = f.pagas;
+      document.getElementById('f_venc').value = f.venc;
+    }
+  } else {
+    ['f_nome','f_instituicao','f_total_parc','f_mensal','f_venc'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('f_pagas').value = '0';
+  }
+  document.getElementById('modalFinanciamento').classList.add('open');
+}
+function closeModalFinanciamento() { document.getElementById('modalFinanciamento').classList.remove('open'); }
+
+function saveFinanciamento() {
+  const nome = document.getElementById('f_nome').value.trim();
+  const instituicao = document.getElementById('f_instituicao').value.trim();
+  const totalParc = parseInt(document.getElementById('f_total_parc').value) || 0;
+  const mensal = parseFloat(document.getElementById('f_mensal').value) || 0;
+  const pagas = parseInt(document.getElementById('f_pagas').value) || 0;
+  const venc = parseInt(document.getElementById('f_venc').value) || 1;
+  if (!nome || !totalParc || !mensal) { alert('Preencha descrição, total de parcelas e valor da parcela.'); return; }
+  if (_editFinanciamentoId !== null) {
+    const f = financiamentos.find(x => x.id === _editFinanciamentoId);
+    if (f) Object.assign(f, { nome, instituicao, totalParc, mensal, pagas, venc });
+  } else {
+    financiamentos.push({ id: nextId(financiamentos), nome, instituicao, totalParc, mensal, pagas, venc, pagamentos: [] });
+  }
+  save('fp_financiamentos', financiamentos);
+  closeModalFinanciamento();
+  renderFinanciamentos();
+}
+
+function delFinanciamento(id) {
+  if (!confirm('Remover este financiamento?')) return;
+  financiamentos = financiamentos.filter(x => x.id !== id);
+  save('fp_financiamentos', financiamentos);
+  renderFinanciamentos();
+}
+
+function abrirPagamentoFinanciamento(id) {
+  const f = financiamentos.find(x => x.id === id);
+  if (!f || f.pagas >= f.totalParc) return;
+  _pagamentoFinanciamentoId = id;
+  document.getElementById('pf_numero').textContent = f.pagas + 1;
+  document.getElementById('pf_total').textContent = f.totalParc;
+  document.getElementById('pf_valor_pago').value = f.mensal;
+  document.getElementById('pf_data').value = hoje.toISOString().split('T')[0];
+  document.getElementById('modalPagamentoFinanc').classList.add('open');
+}
+function closeModalPagamentoFinanc() { document.getElementById('modalPagamentoFinanc').classList.remove('open'); }
+
+function confirmarPagamentoFinanciamento() {
+  const f = financiamentos.find(x => x.id === _pagamentoFinanciamentoId);
+  if (!f) return;
+  const valorPago = parseFloat(document.getElementById('pf_valor_pago').value);
+  const data = document.getElementById('pf_data').value;
+  if (isNaN(valorPago) || valorPago < 0) { alert('Informe o valor pago.'); return; }
+  const numero = f.pagas + 1;
+  const desconto = Math.round((f.mensal - valorPago) * 100) / 100;
+  if (!f.pagamentos) f.pagamentos = [];
+  f.pagamentos.push({ numero, valorPago, data, desconto });
+  f.pagas++;
+  save('fp_financiamentos', financiamentos);
+  closeModalPagamentoFinanc();
+  renderFinanciamentos();
 }
 
 // ---- GOOGLE DRIVE ----
@@ -5682,6 +5878,7 @@ function closeMobMenu() {
   <div class="fab-item" onclick="closeFab();switchTab('gastos',null);setTimeout(()=>document.getElementById('gDesc').focus(),200)">📝 Novo Gasto</div>
   <div class="fab-item" onclick="closeFab();switchTab('receitas',null);setTimeout(()=>openModalReceita(),200)">💰 Nova Receita</div>
   <div class="fab-item" onclick="closeFab();switchTab('parcelas',null);setTimeout(()=>openModal('parcela'),200)">📦 Nova Parcela</div>
+  <div class="fab-item" onclick="closeFab();switchTab('financiamentos',null);setTimeout(()=>openModalFinanciamento(),200)">🚗 Novo Financiamento</div>
 </div>
 <button class="fab" id="fabBtn" onclick="toggleFab()" title="Adicionar">＋</button>
 
@@ -5692,6 +5889,7 @@ function closeMobMenu() {
 <div id="mobMoreBackdrop" onclick="closeMobMenu()" style="display:none;position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.3)"></div>
 <div id="mobMoreMenu" style="display:none;position:fixed;bottom:64px;left:0;right:0;z-index:800;background:var(--surface);border-top:1px solid var(--border);padding:16px;display:none;grid-template-columns:repeat(3,1fr);gap:10px;">
   <button class="mob-more-btn" onclick="closeMobMenu();switchTab('parcelas',null)"><span style="font-size:1.2rem">📦</span><span style="font-size:0.65rem;font-weight:600;display:block">PARCELAS</span></button>
+  <button class="mob-more-btn" onclick="closeMobMenu();switchTab('financiamentos',null)"><span style="font-size:1.2rem">🚗</span><span style="font-size:0.65rem;font-weight:600;display:block">FINANCIAM.</span></button>
   <button class="mob-more-btn" onclick="closeMobMenu();switchTab('fixas',null)"><span style="font-size:1.2rem">📋</span><span style="font-size:0.65rem;font-weight:600;display:block">FIXAS</span></button>
   <button class="mob-more-btn" onclick="closeMobMenu();switchTab('invest',null)"><span style="font-size:1.2rem">📈</span><span style="font-size:0.65rem;font-weight:600;display:block">INVEST.</span></button>
   <button class="mob-more-btn" onclick="closeMobMenu();switchTab('cofrinhos',null)"><span style="font-size:1.2rem">🐷</span><span style="font-size:0.65rem;font-weight:600;display:block">COFRINHOS</span></button>
