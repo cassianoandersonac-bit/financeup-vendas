@@ -2199,6 +2199,7 @@ input[type=file] { display: none; }
         <div class="field"><label>Dia de Vencimento</label><input type="number" id="p_venc" placeholder="Ex: 10" min="1" max="31"></div>
       </div>
       <div class="field"><label>Valor da Parcela (R$)</label><input type="number" id="p_mensal" placeholder="Calculado automaticamente" step="0.01"></div>
+      <div class="field"><label>Competência da próxima parcela em aberto</label><input type="month" id="p_mes_proxima"></div>
       <div style="font-size:0.78rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 14px;">
         💡 O valor total será reservado no limite do cartão. A fatura mensal mostrará apenas a parcela do mês.
       </div>
@@ -2673,6 +2674,63 @@ let gastos        = load('fp_gastos',   _defaultGastos);
   });
   if (migrou) save('fp_gastos', gastos);
 })();
+
+// ---- COMPETÊNCIA DE PARCELAS / FATURA ----
+// mesInicio (YYYY-MM) = competência da 1ª parcela. A partir dele dá pra calcular
+// em qual mês-calendário cai qualquer parcela (1..totalParc) da compra.
+function mesSoma(mesStr, n) {
+  const [y, m] = mesStr.split('-').map(Number);
+  const total = (y * 12 + (m - 1)) + n;
+  const ny = Math.floor(total / 12);
+  const nm = (total % 12) + 1;
+  return `${ny}-${String(nm).padStart(2, '0')}`;
+}
+function parcelaCompetenciaProxima(p) {
+  // competência da próxima parcela em aberto (número pagas+1)
+  return mesSoma(p.mesInicio, p.pagas);
+}
+function parcelaValorNoMes(p, mesRef) {
+  if (!p.mesInicio) return 0;
+  const [iy, im] = p.mesInicio.split('-').map(Number);
+  const [ry, rm] = mesRef.split('-').map(Number);
+  const idx = (ry * 12 + rm) - (iy * 12 + im) + 1; // nº da parcela (1-based) que cai em mesRef
+  if (idx < 1 || idx > p.totalParc) return 0;
+  return p.mensal;
+}
+function calcularFaturaCartaoMes(cartaoNome, mesRef) {
+  const gastosVista = gastos.filter(g => g.cartao === cartaoNome && g.data.startsWith(mesRef)).reduce((a,g) => a + g.valor, 0);
+  const parcelasMes = parcelas.filter(p => p.cartao === cartaoNome).reduce((a,p) => a + parcelaValorNoMes(p, mesRef), 0);
+  return parseFloat((gastosVista + parcelasMes).toFixed(2));
+}
+// Avança (idempotente) todas as parcelas do cartão cuja competência já passou de mesCompetenciaPago
+function avancarParcelasCartao(cartaoNome, mesCompetenciaPago) {
+  parcelas.forEach(p => {
+    if (p.cartao !== cartaoNome || !p.mesInicio) return;
+    while (p.pagas < p.totalParc && parcelaCompetenciaProxima(p) <= mesCompetenciaPago) {
+      p.pagas++;
+    }
+  });
+}
+
+// Migração: parcelas antigas não têm mesInicio. Assume que a próxima parcela em
+// aberto tem competência no mês de referência atual (melhor estimativa possível,
+// já que a data real da compra não era salva antes).
+(function migrarCompetenciaParcelas() {
+  let migrou = false;
+  const mesAtual = _mesRefStr();
+  parcelas.forEach(p => {
+    if (!p.mesInicio) { p.mesInicio = mesSoma(mesAtual, -p.pagas); migrou = true; }
+  });
+  if (migrou) save('fp_parcelas', parcelas);
+})();
+
+// Migração: cartões antigos não têm faturaMes (mês-competência que c.fatura representa)
+(function migrarFaturaMesCartoes() {
+  let migrou = false;
+  const mesAtual = _mesRefStr();
+  cartoes.forEach(c => { if (!c.faturaMes) { c.faturaMes = c.pagoMes ? mesSoma(c.pagoMes, 1) : mesAtual; migrou = true; } });
+  if (migrou) save('fp_cartoes', cartoes);
+})();
 let investimentos = load('fp_invest', null);
 if (!investimentos || investimentos.length === 0) {
   investimentos = _defaultInvest;
@@ -2894,7 +2952,7 @@ function renderCartoes() {
     }
     // Migração: avança parcelas de cartões já pagos que ainda não tiveram parcelas avançadas
     if (c.status === 'pago' && c.pagoMes === mesAtual && !c.parcelasAvancadas) {
-      parcelas.forEach(p => { if (p.cartao === c.nome && p.pagas < p.totalParc) p.pagas++; });
+      avancarParcelasCartao(c.nome, c.pagoMes);
       c.parcelasAvancadas = true; mudouCartao = true;
     }
   });
@@ -3040,8 +3098,14 @@ function renderCartoes() {
 function marcarCartaoPago(id) {
   const c = cartoes.find(x=>x.id===id);
   if (c) {
-    c.status = 'pago'; c.pagoMes = _mesRefStr(); c.parcelasAvancadas = true;
-    parcelas.forEach(p => { if (p.cartao === c.nome && p.pagas < p.totalParc) p.pagas++; });
+    const mesPago = c.faturaMes || _mesRefStr();
+    const proximoMes = mesSoma(mesPago, 1);
+    avancarParcelasCartao(c.nome, mesPago);
+    c.status = 'pago';
+    c.pagoMes = mesPago;
+    c.parcelasAvancadas = true;
+    c.faturaMes = proximoMes;
+    c.fatura = calcularFaturaCartaoMes(c.nome, proximoMes);
     save('fp_cartoes', cartoes); save('fp_parcelas', parcelas);
     renderCartoes(); renderParcelas(); renderAlerts(); atualizarTotalMes();
   }
@@ -3081,7 +3145,10 @@ function saveCartao() {
   const fatura = parseFloat(document.getElementById('c_fatura').value) || 0;
   const status = document.getElementById('c_status').value;
   if (!nome || !venc) { alert('Preencha nome e dia de vencimento.'); return; }
-  cartoes.push({ id: nextId(cartoes), nome, banco, venc, limite, fatura, status });
+  const faturaMes = _mesRefStr();
+  const novoCartao = { id: nextId(cartoes), nome, banco, venc, limite, fatura, status, faturaMes };
+  if (status === 'pago') { novoCartao.pagoMes = faturaMes; novoCartao.parcelasAvancadas = true; }
+  cartoes.push(novoCartao);
   save('fp_cartoes', cartoes);
   closeModal('cartao'); renderCartoes(); renderAlerts(); populateCartaoSelect();
 }
@@ -3169,13 +3236,15 @@ function saveParcela() {
   const pagas = parseInt(document.getElementById('p_pagas').value) || 0;
   const venc = parseInt(document.getElementById('p_venc').value) || 1;
   const mensal = parseFloat(document.getElementById('p_mensal').value) || (total / totalParc);
+  const mesProxima = document.getElementById('p_mes_proxima').value || _mesRefStr();
+  const mesInicio = mesSoma(mesProxima, -pagas);
   if (!nome || !totalParc) { alert('Preencha descrição e total de parcelas.'); return; }
   if (!cartaoNome) { alert('Selecione o cartão usado.'); return; }
   if (_editId.parcela !== null) {
     const p = parcelas.find(x => x.id === _editId.parcela);
-    if (p) Object.assign(p, { nome, cartao: cartaoNome, total, totalParc, pagas, venc, mensal });
+    if (p) Object.assign(p, { nome, cartao: cartaoNome, total, totalParc, pagas, venc, mensal, mesInicio });
   } else {
-    parcelas.push({ id: nextId(parcelas), nome, cartao: cartaoNome, total, totalParc, pagas, venc, mensal });
+    parcelas.push({ id: nextId(parcelas), nome, cartao: cartaoNome, total, totalParc, pagas, venc, mensal, mesInicio });
   }
   save('fp_parcelas', parcelas);
   closeModal('parcela'); renderParcelas(); renderCartoes(); renderAlerts();
@@ -3671,10 +3740,12 @@ function addGasto() {
   const cartaoNome = document.getElementById('gCartao').value;
   if (!data || !desc || !valor) { alert('Preencha todos os campos.'); return; }
   gastos.push({ id: nextId(gastos), data, cat, desc, valor, cartao: cartaoNome });
-  // Atualiza fatura do cartao automaticamente
+  // Atualiza fatura do cartao automaticamente, só se o gasto for da competência já refletida em c.fatura
   if (cartaoNome) {
     const c = cartoes.find(x => x.nome === cartaoNome);
-    if (c) { c.fatura = parseFloat((c.fatura + valor).toFixed(2)); save('fp_cartoes', cartoes); renderCartoes(); renderAlerts(); }
+    if (c && data.startsWith(c.faturaMes || _mesRefStr())) {
+      c.fatura = parseFloat((c.fatura + valor).toFixed(2)); save('fp_cartoes', cartoes); renderCartoes(); renderAlerts();
+    }
   }
   save('fp_gastos', gastos);
   document.getElementById('gDesc').value = '';
@@ -3685,7 +3756,9 @@ function delGasto(id) {
   const g = gastos.find(x=>x.id===id);
   if (g && g.cartao) {
     const c = cartoes.find(x=>x.nome===g.cartao);
-    if (c) { c.fatura = Math.max(0, parseFloat((c.fatura - g.valor).toFixed(2))); save('fp_cartoes', cartoes); }
+    if (c && g.data.startsWith(c.faturaMes || _mesRefStr())) {
+      c.fatura = Math.max(0, parseFloat((c.fatura - g.valor).toFixed(2))); save('fp_cartoes', cartoes);
+    }
   }
   gastos = gastos.filter(x=>x.id!==id);
   save('fp_gastos', gastos); renderGastos(); renderCartoes(); renderAlerts();
@@ -3722,10 +3795,12 @@ function openModal(type, id = null) {
         document.getElementById('p_pagas').value = p.pagas;
         document.getElementById('p_venc').value = p.venc;
         document.getElementById('p_mensal').value = p.mensal;
+        document.getElementById('p_mes_proxima').value = p.mesInicio ? parcelaCompetenciaProxima(p) : '';
       }
     } else {
       ['p_nome','p_total','p_total_parc','p_pagas','p_mensal'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('p_pagas').value = '0';
+      document.getElementById('p_mes_proxima').value = _mesRefStr();
     }
   }
 
@@ -4159,17 +4234,17 @@ function salvarEdicaoGasto() {
   const novoValor = parseFloat(document.getElementById('eg_valor').value) || 0;
   const novoCartao = document.getElementById('eg_cartao').value;
   if (!novaData || !novaDesc || !novoValor) { alert('Preencha todos os campos.'); return; }
-  if (g.cartao && g.cartao !== novoCartao) {
-    const cAntigo = cartoes.find(x => x.nome === g.cartao);
-    if (cAntigo) { cAntigo.fatura = Math.max(0, parseFloat((cAntigo.fatura - g.valor).toFixed(2))); }
-    const cNovo = cartoes.find(x => x.nome === novoCartao);
-    if (cNovo) { cNovo.fatura = parseFloat((cNovo.fatura + novoValor).toFixed(2)); }
-    save('fp_cartoes', cartoes);
-  } else if (g.cartao && g.valor !== novoValor) {
-    const c = cartoes.find(x => x.nome === g.cartao);
-    if (c) { c.fatura = Math.max(0, parseFloat((c.fatura - g.valor + novoValor).toFixed(2))); }
-    save('fp_cartoes', cartoes);
+  // Remove o valor antigo da fatura do cartão antigo (se a competência antiga ainda for a corrente)
+  // e soma o novo valor na fatura do cartão novo (se a nova competência for a corrente).
+  const cAntigo = g.cartao ? cartoes.find(x => x.nome === g.cartao) : null;
+  if (cAntigo && g.data.startsWith(cAntigo.faturaMes || _mesRefStr())) {
+    cAntigo.fatura = Math.max(0, parseFloat((cAntigo.fatura - g.valor).toFixed(2)));
   }
+  const cNovo = novoCartao ? cartoes.find(x => x.nome === novoCartao) : null;
+  if (cNovo && novaData.startsWith(cNovo.faturaMes || _mesRefStr())) {
+    cNovo.fatura = parseFloat((cNovo.fatura + novoValor).toFixed(2));
+  }
+  if (cAntigo || cNovo) save('fp_cartoes', cartoes);
   Object.assign(g, { data: novaData, cat: novaCat, desc: novaDesc, valor: novoValor, cartao: novoCartao });
   save('fp_gastos', gastos);
   closeModal('editGasto'); renderGastos(); renderCartoes(); renderAlerts();
@@ -4625,17 +4700,11 @@ function abrirFecharMes() {
   }
 
   const nomesPagos = pagos.map(c => c.nome);
-  const parcelasAvancam = parcelas.filter(p => p.pagas < p.totalParc && nomesPagos.includes(p.cartao));
   const adicionaisAvancam = adicionalParcelas.filter(p => p.pagas < p.totalParc && nomesPagos.includes(p.cartao));
-  const parcelasQuitam = parcelasAvancam.filter(p => p.pagas + 1 >= p.totalParc);
   const adicionaisQuitam = adicionaisAvancam.filter(p => p.pagas + 1 >= p.totalParc);
 
   let resumo = `<b>${pagos.length} cartão(ões) pago(s):</b> ${nomesPagos.join(', ')}<br><br>`;
-  resumo += `✅ Fatura zerada e status reaberto para todos os cartões pagos<br>`;
-  if (parcelasAvancam.length > 0)
-    resumo += `📦 ${parcelasAvancam.length} parcelamento(s) avançado(s) em 1x<br>`;
-  if (parcelasQuitam.length > 0)
-    resumo += `🏁 ${parcelasQuitam.length} parcelamento(s) quitado(s) e removido(s)<br>`;
+  resumo += `✅ Cartões reabertos, já com a fatura do próximo mês calculada (gastos + parcelas da competência)<br>`;
   if (adicionaisAvancam.length > 0)
     resumo += `👤 ${adicionaisAvancam.length} parcela(s) adicional(is) avançada(s) em 1x<br>`;
   if (adicionaisQuitam.length > 0)
@@ -4650,11 +4719,12 @@ function abrirFecharMes() {
 function confirmarFecharMes() {
   document.getElementById('modalFecharMes').classList.remove('open');
 
-  const nomesPagos = new Set(cartoes.filter(c => c.status === 'pago').map(c => c.nome));
+  const cartoesPagos = cartoes.filter(c => c.status === 'pago');
+  const nomesPagos = new Set(cartoesPagos.map(c => c.nome));
 
-  parcelas.forEach(p => {
-    if (p.pagas < p.totalParc && nomesPagos.has(p.cartao)) p.pagas++;
-  });
+  // Parcelas e fatura de cada cartão já foram avançadas/recalculadas em marcarCartaoPago();
+  // avancarParcelasCartao é idempotente, então chamar de novo aqui é só uma garantia defensiva.
+  cartoesPagos.forEach(c => avancarParcelasCartao(c.nome, c.pagoMes || c.faturaMes || _mesRefStr()));
   parcelas = parcelas.filter(p => p.pagas < p.totalParc);
 
   adicionalParcelas.forEach(p => {
@@ -4662,12 +4732,7 @@ function confirmarFecharMes() {
   });
   adicionalParcelas = adicionalParcelas.filter(p => p.pagas < p.totalParc);
 
-  cartoes.forEach(c => {
-    if (c.status === 'pago') {
-      c.fatura = 0;
-      c.status = 'aberto';
-    }
-  });
+  cartoes.forEach(c => { if (c.status === 'pago') c.status = 'aberto'; });
 
   save('fp_cartoes', cartoes);
   save('fp_parcelas', parcelas);
@@ -4684,7 +4749,7 @@ function confirmarFecharMes() {
   ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;';
   const box = document.createElement('div');
   box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;';
-  box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">✅</div><p style="font-weight:700;margin:0 0 8px;color:#0d9488">Mês fechado com sucesso!</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Faturas zeradas, parcelas avançadas.</p>';
+  box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">✅</div><p style="font-weight:700;margin:0 0 8px;color:#0d9488">Mês fechado com sucesso!</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Cartões reabertos com a fatura do próximo mês já calculada.</p>';
   const btn = document.createElement('button');
   btn.textContent = 'OK';
   btn.style.cssText = 'padding:10px 24px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
