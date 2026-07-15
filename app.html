@@ -31,27 +31,35 @@ if ('serviceWorker' in navigator) {
 <!-- FinanceUp v1.0 — Versão offline (localStorage) -->
 <style>
 :root {
-  --bg:       #f7fafa;
+  /* ── 60-30-10: 60% dominante ── */
+  --bg:       #F7F9F9;
   --surface:  #ffffff;
-  --surface2: #f0f7f6;
-  --border:   #e2eeec;
-  --border2:  #c8e0dc;
+  --surface2: #EEF2F1;
+  --border:   #E3E9E8;
+  --border2:  #C9D3D1;
+  /* ── 60-30-10: 30% secundária (teal) ── */
   --teal:     #0d9488;
   --teal2:    #14b8a6;
   --teal3:    #5eead4;
   --teal4:    #ccfbf1;
   --teal5:    #f0fdfa;
+  /* ── 60-30-10: 10% destaque/ação ── */
+  --action:      #D4FF4D;
+  --action2:     #e0ff77;
+  --action-ink:  #495e08;
+  /* ── perigo/erro real (não faz parte do 60-30-10; preservado por sinalizar risco) ── */
   --red:      #e11d48;
   --red2:     #fb7185;
   --red3:     #fff1f2;
-  --amber:    #d97706;
-  --amber2:   #fbbf24;
-  --amber3:   #fffbeb;
-  --blue:     #2563eb;
-  --blue2:    #60a5fa;
-  --blue3:    #eff6ff;
-  --purple:   #7c3aed;
-  --purple3:  #f5f3ff;
+  /* ── aviso e info secundária: dobradas na família de ação/teal ── */
+  --amber:    var(--action-ink);
+  --amber2:   var(--action);
+  --amber3:   #f8ffe8;
+  --blue:     var(--teal);
+  --blue2:    var(--teal2);
+  --blue3:    var(--teal5);
+  --purple:   var(--action-ink);
+  --purple3:  #f6ffe0;
   --text:     #0f2724;
   --text2:    #374151;
   --muted:    #6b7280;
@@ -147,9 +155,9 @@ if ('serviceWorker' in navigator) {
   --teal4:    #0d3330;
   --teal5:    #0a2520;
   --red3:     #2a0f18;
-  --amber3:   #2a1f00;
-  --blue3:    #0f1f3a;
-  --purple3:  #1a1030;
+  --amber3:   #374706;
+  --blue3:    #064641;
+  --purple3:  #3b4b06;
   --text:     #e2f0ee;
   --text2:    #b0c4c0;
   --muted:    #7a9a94;
@@ -157,8 +165,8 @@ if ('serviceWorker' in navigator) {
   --shadow:   0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
   --shadow2:  0 2px 8px rgba(0,0,0,.4), 0 8px 32px rgba(0,0,0,.3);
 }
-[data-theme="dark"] .app-header { background: #1a2e2b; }
-[data-theme="dark"] .sidebar { background: #1a2e2b; }
+[data-theme="dark"] .app-header { background: var(--surface); }
+[data-theme="dark"] .sidebar { background: var(--surface); }
 [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
   background: var(--surface2) !important;
   color: var(--text) !important;
@@ -188,19 +196,19 @@ if ('serviceWorker' in navigator) {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--teal);
-  color: #fff;
+  background: var(--action);
+  color: var(--action-ink);
   font-size: 1.6rem;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(13,148,136,.5);
+  box-shadow: 0 4px 16px rgba(212,255,77,.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 900;
   transition: transform .15s, box-shadow .15s;
 }
-.fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(13,148,136,.6); }
+.fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(212,255,77,.6); }
 .fab-menu {
   position: fixed;
   bottom: 92px;
@@ -672,14 +680,14 @@ input[type=file] { display: none; }
 .section-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 
 .btn-add {
-  background: var(--teal); color: #fff;
+  background: var(--action); color: var(--action-ink);
   border: none; border-radius: 8px;
   padding: 7px 15px; font-size: 0.76rem; font-weight: 700;
   cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 8px rgba(13,148,136,.25);
+  box-shadow: 0 2px 8px rgba(212,255,77,.25);
   transition: background .15s;
 }
-.btn-add:hover { background: var(--teal2); }
+.btn-add:hover { background: var(--action2); }
 
 /* ── CARDS ── */
 .cards-list { display: flex; flex-direction: column; gap: 10px; }
@@ -750,20 +758,21 @@ input[type=file] { display: none; }
 .gastos-table tr:hover td { background: var(--surface2); }
 
 .cat-badge { padding: 3px 8px; border-radius: 50px; font-size: 0.68rem; font-weight: 600; }
-.cat-alimentacao   { background: #ecfdf5; color: #059669; }
-.cat-assinaturas   { background: #f5f3ff; color: #7c3aed; }
-.cat-educacao      { background: #eff6ff; color: #2563eb; }
-.cat-financiamento { background: #fffbeb; color: #d97706; }
-.cat-lazer         { background: #fdf2f8; color: #be185d; }
-.cat-mercado       { background: #f0fdfa; color: #0d9488; }
-.cat-moradia       { background: #eff6ff; color: #1d4ed8; }
-.cat-outros        { background: #f9fafb; color: #6b7280; }
-.cat-pets          { background: #fff7ed; color: #ea580c; }
-.cat-presentes     { background: #fdf2f8; color: #db2777; }
-.cat-saude         { background: #fff1f2; color: #e11d48; }
-.cat-transporte    { background: #f0f9ff; color: #0284c7; }
-.cat-vestuario     { background: #f5f3ff; color: #6d28d9; }
-.cat-viagem        { background: #fffbeb; color: #b45309; }
+/* Categorias essenciais → família teal (30%); discricionárias → família ação/lime (10%) */
+.cat-mercado       { background: #e8fdfb; color: #09675f; }
+.cat-alimentacao   { background: #e3fdfa; color: #0b7f74; }
+.cat-transporte    { background: #defcf9; color: #0d968a; }
+.cat-moradia       { background: #d9fcf9; color: #0fad9f; }
+.cat-saude         { background: #d5fbf8; color: #11c5b5; }
+.cat-educacao      { background: #d0fbf7; color: #13dcca; }
+.cat-financiamento { background: #cbfaf6; color: #1eebd9; }
+.cat-assinaturas   { background: #f1fbd0; color: #495e08; }
+.cat-lazer         { background: #eefac6; color: #587109; }
+.cat-pets          { background: #ebfabd; color: #67840b; }
+.cat-presentes     { background: #e8f9b4; color: #75970c; }
+.cat-vestuario     { background: #e5f8aa; color: #84aa0e; }
+.cat-viagem        { background: #e2f7a1; color: #93bd0f; }
+.cat-outros        { background: #e0f797; color: #a1d011; }
 
 .btn-del { background: none; border: none; color: var(--muted2); cursor: pointer; font-size: .9rem; padding: 2px 5px; border-radius: 4px; transition: color .15s; }
 .btn-del:hover { color: var(--red); }
@@ -801,12 +810,12 @@ input[type=file] { display: none; }
   font-size: 0.78rem; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
 }
 .btn-save {
-  background: var(--teal); color: #fff; border: none;
+  background: var(--action); color: var(--action-ink); border: none;
   border-radius: 8px; padding: 7px 15px; font-size: 0.78rem;
   font-weight: 700; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 8px rgba(13,148,136,.3);
+  box-shadow: 0 2px 8px rgba(212,255,77,.3);
 }
-.btn-save:hover { background: var(--teal2); }
+.btn-save:hover { background: var(--action2); }
 
 /* PARCELAS */
 .parcela-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px 18px; box-shadow: var(--shadow); transition: box-shadow .2s; }
@@ -997,8 +1006,8 @@ input[type=file] { display: none; }
   word-break: break-word;
 }
 .nota-card:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.13); }
-.nota-card-title { font-weight: 700; font-size: 0.86rem; color: #1a2e2b; margin-bottom: 7px; }
-.nota-card-text  { font-size: 0.82rem; color: #374151; flex: 1; white-space: pre-wrap; line-height: 1.5; }
+.nota-card-title { font-weight: 700; font-size: 0.86rem; color: var(--text); margin-bottom: 7px; }
+.nota-card-text  { font-size: 0.82rem; color: var(--text2); flex: 1; white-space: pre-wrap; line-height: 1.5; }
 .nota-card-date  { font-size: 0.65rem; color: rgba(0,0,0,.38); margin-top: 10px; }
 .nota-card-del {
   position: absolute; top: 8px; right: 8px;
@@ -1016,7 +1025,7 @@ input[type=file] { display: none; }
   width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent;
   cursor: pointer; transition: transform .1s;
 }
-.nota-cor-btn.selected { border-color: #1a2e2b; transform: scale(1.15); }
+.nota-cor-btn.selected { border-color: var(--text); transform: scale(1.15); }
 @media (max-width: 600px) {
   .notas-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 }
@@ -1039,7 +1048,7 @@ input[type=file] { display: none; }
     <!-- Slide 0: Boas-vindas -->
     <div class="_wslide" data-slide="0" style="display:flex;flex-direction:column;align-items:center;gap:16px">
       <div style="font-size:64px;line-height:1">💹</div>
-      <h1 style="margin:0;font-size:28px;font-weight:800;color:var(--text,#0f2724)">Finance<span style="color:#0d9488">Up</span></h1>
+      <h1 style="margin:0;font-size:28px;font-weight:800;color:var(--text,#0f2724)">Finance<span style="color:var(--teal)">Up</span></h1>
       <p style="margin:0;font-size:16px;font-weight:600;color:var(--text2,#374151)">Seu controle financeiro pessoal</p>
       <p style="margin:0;font-size:14px;color:var(--muted,#6b7280);line-height:1.6;max-width:300px">Tudo que você precisa para organizar cartões, gastos, parcelas e investimentos — em um só lugar.</p>
     </div>
@@ -1070,21 +1079,21 @@ input[type=file] { display: none; }
       <h2 style="margin:0;font-size:22px;font-weight:800;color:var(--text,#0f2724)">Registre seus gastos</h2>
       <p style="margin:0;font-size:14px;color:var(--muted,#6b7280);line-height:1.6;max-width:300px">Anote cada gasto com data, categoria e cartão usado. O dashboard atualiza em tempo real para você saber onde está gastando mais.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:300px">
-        <div style="background:#fef3c7;border-radius:12px;padding:10px;text-align:center">
+        <div style="background:#e3fdfa;border-radius:12px;padding:10px;text-align:center">
           <div style="font-size:20px">🍔</div>
-          <div style="font-size:.75rem;font-weight:700;color:#92400e">Alimentação</div>
+          <div style="font-size:.75rem;font-weight:700;color:#0b7f74">Alimentação</div>
         </div>
-        <div style="background:#d1fae5;border-radius:12px;padding:10px;text-align:center">
+        <div style="background:#e8fdfb;border-radius:12px;padding:10px;text-align:center">
           <div style="font-size:20px">🛒</div>
-          <div style="font-size:.75rem;font-weight:700;color:#065f46">Mercado</div>
+          <div style="font-size:.75rem;font-weight:700;color:#09675f">Mercado</div>
         </div>
-        <div style="background:#dbeafe;border-radius:12px;padding:10px;text-align:center">
+        <div style="background:#defcf9;border-radius:12px;padding:10px;text-align:center">
           <div style="font-size:20px">🚗</div>
-          <div style="font-size:.75rem;font-weight:700;color:#1e40af">Transporte</div>
+          <div style="font-size:.75rem;font-weight:700;color:#0d968a">Transporte</div>
         </div>
-        <div style="background:#ede9fe;border-radius:12px;padding:10px;text-align:center">
+        <div style="background:#eefac6;border-radius:12px;padding:10px;text-align:center">
           <div style="font-size:20px">🎮</div>
-          <div style="font-size:.75rem;font-weight:700;color:#5b21b6">Lazer</div>
+          <div style="font-size:.75rem;font-weight:700;color:#587109">Lazer</div>
         </div>
       </div>
     </div>
@@ -1094,7 +1103,7 @@ input[type=file] { display: none; }
       <div style="font-size:64px;line-height:1">📊</div>
       <h2 style="margin:0;font-size:22px;font-weight:800;color:var(--text,#0f2724)">Acompanhe seu saldo</h2>
       <p style="margin:0;font-size:14px;color:var(--muted,#6b7280);line-height:1.6;max-width:300px">O dashboard mostra receitas, despesas e saldo do mês com gráfico dos últimos 6 meses. Saiba sempre se está no positivo ou negativo.</p>
-      <div style="background:linear-gradient(135deg,#0d9488,#2563eb);border-radius:16px;padding:16px 20px;width:100%;max-width:300px;color:#fff">
+      <div style="background:linear-gradient(135deg,#0d9488,#67840b);border-radius:16px;padding:16px 20px;width:100%;max-width:300px;color:#fff">
         <div style="font-size:.75rem;opacity:.8;margin-bottom:4px">Saldo Previsto</div>
         <div style="font-size:1.8rem;font-weight:800">R$ 1.240,00</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
@@ -1153,7 +1162,7 @@ input[type=file] { display: none; }
 
   <!-- Dots de navegação -->
   <div style="display:flex;gap:8px;margin:20px 0 8px" id="_wDots">
-    <div class="_wdot active" data-i="0" style="width:20px;height:6px;border-radius:3px;background:#0d9488;transition:all .2s;cursor:pointer"></div>
+    <div class="_wdot active" data-i="0" style="width:20px;height:6px;border-radius:3px;background:var(--teal);transition:all .2s;cursor:pointer"></div>
     <div class="_wdot" data-i="1" style="width:6px;height:6px;border-radius:3px;background:var(--border,#e2eeec);transition:all .2s;cursor:pointer"></div>
     <div class="_wdot" data-i="2" style="width:6px;height:6px;border-radius:3px;background:var(--border,#e2eeec);transition:all .2s;cursor:pointer"></div>
     <div class="_wdot" data-i="3" style="width:6px;height:6px;border-radius:3px;background:var(--border,#e2eeec);transition:all .2s;cursor:pointer"></div>
@@ -1171,7 +1180,7 @@ input[type=file] { display: none; }
     ">Pular</button>
     <button id="_wBtnNext" onclick="_wNext()" style="
       flex:2; padding:14px; font-size:14px; font-weight:700;
-      background:#0d9488; border:none; border-radius:14px;
+      background:var(--teal); border:none; border-radius:14px;
       cursor:pointer; font-family:inherit; color:#fff;
       -webkit-tap-highlight-color:transparent;
     ">Próximo →</button>
@@ -1196,7 +1205,7 @@ input[type=file] { display: none; }
     document.querySelectorAll('._wdot').forEach(d => {
       const i = parseInt(d.dataset.i);
       d.style.width = i === n ? '20px' : '6px';
-      d.style.background = i === n ? '#0d9488' : 'var(--border,#e2eeec)';
+      d.style.background = i === n ? 'var(--teal)' : 'var(--border,#e2eeec)';
     });
     const isLast = n === TOTAL - 1;
     document.getElementById('_wBtnNext').textContent = isLast ? 'Começar ✓' : 'Próximo →';
@@ -1289,7 +1298,7 @@ input[type=file] { display: none; }
   <!-- Logo -->
   <div style="text-align:center; margin-bottom:32px;">
     <div style="font-size:48px; margin-bottom:8px;">💹</div>
-    <h1 style="margin:0; font-size:24px; font-weight:800; color:var(--text,#0f2724);">Finance<span style="color:#0d9488">Up</span></h1>
+    <h1 style="margin:0; font-size:24px; font-weight:800; color:var(--text,#0f2724);">Finance<span style="color:var(--teal)">Up</span></h1>
   </div>
 
   <!-- Título dinâmico -->
@@ -1346,7 +1355,7 @@ input[type=file] { display: none; }
   function _atualizarDots() {
     const dots = document.querySelectorAll('._dot');
     dots.forEach((d, i) => {
-      d.style.background = i < _pinBuffer.length ? '#0d9488' : 'var(--border,#e2eeec)';
+      d.style.background = i < _pinBuffer.length ? 'var(--teal)' : 'var(--border,#e2eeec)';
     });
   }
 
@@ -1629,7 +1638,7 @@ input[type=file] { display: none; }
 
     <!-- ── CARD SALDO DESTAQUE ── -->
     <div id="dashSaldoHero" style="
-      background: linear-gradient(135deg, #0d9488 0%, #14b8a6 60%, #2563eb 100%);
+      background: linear-gradient(135deg, #0d9488 0%, #14b8a6 60%, #67840b 100%);
       border-radius: 20px; padding: 24px 20px 20px; margin-bottom: 16px;
       color: #fff; position: relative; overflow: hidden;
     ">
@@ -1663,9 +1672,9 @@ input[type=file] { display: none; }
         <div style="font-size:.68rem;color:var(--muted);font-weight:600;margin-bottom:4px">🧾 Gastos do mês</div>
         <div id="dashMiniGastos" style="font-size:1.1rem;font-weight:800;color:var(--red)">—</div>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;border-left:3px solid #7c3aed">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;border-left:3px solid var(--action-ink)">
         <div style="font-size:.68rem;color:var(--muted);font-weight:600;margin-bottom:4px">💳 Faturas abertas</div>
-        <div id="dashMiniFaturas" style="font-size:1.1rem;font-weight:800;color:#7c3aed">—</div>
+        <div id="dashMiniFaturas" style="font-size:1.1rem;font-weight:800;color:var(--action-ink)">—</div>
       </div>
     </div>
 
@@ -1677,7 +1686,7 @@ input[type=file] { display: none; }
       </div>
       <div style="display:flex;gap:16px;margin-top:10px;justify-content:center">
         <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted)">
-          <div style="width:12px;height:12px;border-radius:3px;background:#0d9488"></div> Receita
+          <div style="width:12px;height:12px;border-radius:3px;background:var(--teal)"></div> Receita
         </div>
         <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted)">
           <div style="width:12px;height:12px;border-radius:3px;background:#e11d48"></div> Despesa
@@ -1996,7 +2005,7 @@ input[type=file] { display: none; }
     <!-- Adicionais previstos -->
     <div class="section-header" style="margin-bottom:14px" id="projecaoAdicionalHeader">
       <div class="section-title" style="font-size:1rem">👥 Parcelamentos Adicionais Previstos</div>
-      <div id="projecaoAdicionalTotal" style="font-size:0.88rem;color:#a0a0c0;font-weight:600"></div>
+      <div id="projecaoAdicionalTotal" style="font-size:0.88rem;color:var(--muted2);font-weight:600"></div>
     </div>
     <div id="projecaoAdicionalList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px"></div>
 
@@ -2999,11 +3008,11 @@ function renderCartoes() {
       ${financiamentosAtivos.map(f => `<div class="bp-sub"><span>🏦 ${f.nome}</span><span style="color:var(--blue)">${fmt(f.mensal)}</span></div>`).join('')}
     ` : ''}
     ${totalAdicionais > 0 ? `
-      <div class="bp-row" style="margin-top:4px"><span>👥 Adicionais (excluídos)</span><span style="color:#a0a0c0">− ${fmt(totalAdicionais)}</span></div>
+      <div class="bp-row" style="margin-top:4px"><span>👥 Adicionais (excluídos)</span><span style="color:var(--muted2)">− ${fmt(totalAdicionais)}</span></div>
     ` : ''}
     <div class="bp-divider"></div>
     <div class="bp-total"><span>Total do Mês</span><span style="color:var(--red)">${fmt(totalGeral)}</span></div>
-    <div class="bp-total" style="margin-top:4px"><span>Sua Parte</span><span style="color:#c4b5fd">${fmt(suaParteGeral)}</span></div>
+    <div class="bp-total" style="margin-top:4px"><span>Sua Parte</span><span style="color:var(--action-ink)">${fmt(suaParteGeral)}</span></div>
   `;
 
   sum.innerHTML = `
@@ -3012,7 +3021,7 @@ function renderCartoes() {
       <div class="value red">${fmt(totalFaturaComParcelas)}</div>
       <div class="breakdown-popup">${popupHTML}</div>
     </div>
-    <div class="sum-card" style="border-left:3px solid #c4b5fd"><div class="label">Sua Parte</div><div class="value" style="color:#c4b5fd">${fmt(suaParteGeral)}</div></div>
+    <div class="sum-card" style="border-left:3px solid var(--action-ink)"><div class="label">Sua Parte</div><div class="value" style="color:var(--action-ink)">${fmt(suaParteGeral)}</div></div>
     <div class="sum-card"><div class="label">Fixas em Aberto</div><div class="value" style="color:var(--blue)">${fmt(totalFixasAberto)}</div></div>
     <div class="sum-card"><div class="label">Cartões em Aberto</div><div class="value yellow">${qtdAbertos}</div></div>
   `;
@@ -3066,7 +3075,7 @@ function renderCartoes() {
         <div style="font-size:0.78rem;color:var(--muted)">Gastos do mês: <span style="color:var(--accent);font-weight:600">${fmt(gastosDoMes)}</span></div>
         ${parcelaMes > 0 ? `<div style="font-size:0.78rem;color:var(--muted)">Parcelas do mês: <span style="color:var(--blue);font-weight:600">${fmt(parcelaMes)}</span></div>` : ''}
         ${totalParcelado > 0 ? `<div style="font-size:0.78rem;color:var(--muted)">Parcelas (restante total): <span style="color:var(--accent2);font-weight:600">${fmt(totalParcelado)}</span></div>` : ''}
-        ${adicParceladoTotal > 0 ? `<div style="font-size:0.78rem;color:var(--muted)">Adicionais (restante total): <span style="color:#a0a0c0;font-weight:600">${fmt(adicParceladoTotal)}</span></div>` : ''}
+        ${adicParceladoTotal > 0 ? `<div style="font-size:0.78rem;color:var(--muted)">Adicionais (restante total): <span style="color:var(--muted2);font-weight:600">${fmt(adicParceladoTotal)}</span></div>` : ''}
         <div style="font-size:0.78rem;color:var(--muted)">Disponível: <span style="color:${disponivel >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600">${fmt(disponivel)}</span></div>
       </div>
       <div class="progress-wrap" style="margin-top:10px">
@@ -3079,7 +3088,7 @@ function renderCartoes() {
         const totalAdic = adicParcelaMes + adicGastosMes;
         if (totalAdic <= 0) return '';
         return `<div class="adicional-info-bar">
-          <span style="font-size:0.78rem;color:#a0a0c0">👥 Adicionais este mês:</span>
+          <span style="font-size:0.78rem;color:var(--muted2)">👥 Adicionais este mês:</span>
           ${adicParcelaMes > 0 ? `<span class="ai-label">Parcelas <span class="ai-val">${fmt(adicParcelaMes)}</span></span>` : ''}
           ${adicGastosMes  > 0 ? `<span class="ai-label">Avulsos <span class="ai-val">${fmt(adicGastosMes)}</span></span>` : ''}
           <span class="ai-label">Total adicionais <span class="ai-val">${fmt(totalAdic)}</span></span>
@@ -3418,8 +3427,8 @@ async function exportarParaGDrive() {
 // ---- CATEGORIAS ----
 const CAT_LABELS  = { alimentacao:'Alimentação', assinaturas:'Assinaturas', educacao:'Educação', financiamento:'Financiamento', lazer:'Lazer', mercado:'Mercado', moradia:'Moradia', outros:'Outros', pets:'Pets', presentes:'Presentes', saude:'Saúde', transporte:'Transporte', vestuario:'Vestuário', viagem:'Viagem' };
 const CAT_EMOJIS  = { alimentacao:'🍔', assinaturas:'📺', educacao:'🎓', financiamento:'🏦', lazer:'🎮', mercado:'🛒', moradia:'🏠', outros:'📦', pets:'🐾', presentes:'🎁', saude:'💊', transporte:'🚗', vestuario:'👕', viagem:'✈️' };
-const CAT_COLORS  = { alimentacao:'#7bc48f', assinaturas:'#b89fd4', educacao:'#82aad4', financiamento:'#e8b96a', lazer:'#f0a0c0', mercado:'#5ab87a', moradia:'#93c5fd', outros:'#94a3b8', pets:'#fdba74', presentes:'#f9a8d4', saude:'#e07a68', transporte:'#60a5fa', vestuario:'#ddd6fe', viagem:'#fcd34d' };
-const CAT_BG      = { alimentacao:'#152515', assinaturas:'#1e1528', educacao:'#131828', financiamento:'#2a2010', lazer:'#2a1020', mercado:'#0f2018', moradia:'#101828', outros:'#1a1a1a', pets:'#2a1a08', presentes:'#2a1018', saude:'#281010', transporte:'#101525', vestuario:'#1a1030', viagem:'#28200a' };
+const CAT_COLORS  = { alimentacao:'#10b2a4', assinaturas:'#67840b', educacao:'#72f3e7', financiamento:'#98f6ee', lazer:'#8bb30f', mercado:'#0c8d81', moradia:'#27ecdb', outros:'#e8f9b4', pets:'#b0e212', presentes:'#c3ef39', saude:'#4defe1', transporte:'#13d8c6', vestuario:'#d1f368', viagem:'#ddf68e' };
+const CAT_BG      = { alimentacao:'#064641', assinaturas:'#334205', educacao:'#085952', financiamento:'#085e56', lazer:'#374706', mercado:'#06423c', moradia:'#075049', outros:'#495e08', pets:'#3b4b06', presentes:'#3e5007', saude:'#07544e', transporte:'#074b45', vestuario:'#425507', viagem:'#465a07' };
 const CATS_ORDER  = ['alimentacao','mercado','transporte','lazer','saude','outros'];
 
 function initCatFiltros() {
@@ -3481,7 +3490,7 @@ function _renderDonut(porCat, totalGeral) {
     let start = -Math.PI / 2;
     fatias.forEach(([cat, val], i) => {
       const angle = (val / totalGeral) * (2 * Math.PI) - GAP;
-      const color = CAT_COLORS[cat] || '#94a3b8';
+      const color = CAT_COLORS[cat] || 'var(--muted2)';
       const isHov = i === hovIdx;
       const Ro = isHov ? R + 8 : R;
       const ri = isHov ? r - 4 : r;
@@ -3540,7 +3549,7 @@ function _renderDonut(porCat, totalGeral) {
   // Legenda
   legendaEl.innerHTML = fatias.map(([cat, val]) => `
     <div style="display:flex;align-items:center;gap:5px;font-size:0.76rem;background:var(--surface2);border-radius:20px;padding:4px 10px;">
-      <span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></span>
+      <span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLORS[cat]||'var(--muted2)'};flex-shrink:0"></span>
       <span style="color:var(--muted)">${CAT_EMOJIS[cat]||''} ${CAT_LABELS[cat]||cat}</span>
       <span style="font-weight:700;color:var(--text)">${Math.round(val/totalGeral*100)}%</span>
     </div>
@@ -4279,22 +4288,22 @@ function delInvest(id) {
 
 // ---- CONTAS FIXAS ----
 const CF_CATS = {
-  alimentacao:   { label:'Alimentação',  emoji:'🍔', color:'#86efac', bg:'#0f2a1a' },
-  assinaturas:   { label:'Assinaturas', emoji:'📺', color:'#c4b5fd', bg:'#1a1025' },
-  educacao:      { label:'Educação',    emoji:'🎓', color:'#a5b4fc', bg:'#12122a' },
-  financiamento: { label:'Financiamento',emoji:'🏦', color:'#fde68a', bg:'#2a2010' },
-  lazer:         { label:'Lazer',       emoji:'🎮', color:'#f9a8d4', bg:'#2a1020' },
-  moradia:       { label:'Moradia',     emoji:'🏠', color:'#93c5fd', bg:'#10192a' },
-  outros:        { label:'Outros',      emoji:'📦', color:'#94a3b8', bg:'#1a1a2a' },
-  pets:          { label:'Pets',        emoji:'🐾', color:'#fdba74', bg:'#2a1a08' },
-  presentes:     { label:'Presentes',   emoji:'🎁', color:'#f9a8d4', bg:'#2a1018' },
-  receita:       { label:'Receita',     emoji:'💵', color:'#86efac', bg:'#0f2a1a' },
-  saude:         { label:'Saúde',       emoji:'💊', color:'#fca5a5', bg:'#2a1010' },
-  transporte:    { label:'Transporte',  emoji:'🚌', color:'#7dd3fc', bg:'#0f1f2a' },
-  veiculo:       { label:'Veículo',     emoji:'🚗', color:'#6ee7b7', bg:'#0f2520' },
-  vestuario:     { label:'Vestuário',   emoji:'👕', color:'#ddd6fe', bg:'#1a1030' },
-  viagem:        { label:'Viagem',      emoji:'✈️', color:'#fed7aa', bg:'#2a1808' },
-  servicos:      { label:'Serviços',    emoji:'📡', color:'#fde68a', bg:'#2a2010' },
+  alimentacao:   { label:'Alimentação',  emoji:'🍔', color:'#0c8d81', bg:'#06423c' },
+  assinaturas:   { label:'Assinaturas', emoji:'📺', color:'#67840b', bg:'#334205' },
+  educacao:      { label:'Educação',    emoji:'🎓', color:'#10b2a4', bg:'#064641' },
+  financiamento: { label:'Financiamento',emoji:'🏦', color:'#13d8c6', bg:'#074b45' },
+  lazer:         { label:'Lazer',       emoji:'🎮', color:'#8bb30f', bg:'#374706' },
+  moradia:       { label:'Moradia',     emoji:'🏠', color:'#27ecdb', bg:'#075049' },
+  outros:        { label:'Outros',      emoji:'📦', color:'#b0e212', bg:'#3b4b06' },
+  pets:          { label:'Pets',        emoji:'🐾', color:'#c3ef39', bg:'#3e5007' },
+  presentes:     { label:'Presentes',   emoji:'🎁', color:'#d1f368', bg:'#425507' },
+  receita:       { label:'Receita',     emoji:'💵', color:'#ddf68e', bg:'#465a07' },
+  saude:         { label:'Saúde',       emoji:'💊', color:'#4defe1', bg:'#07544e' },
+  transporte:    { label:'Transporte',  emoji:'🚌', color:'#72f3e7', bg:'#085952' },
+  veiculo:       { label:'Veículo',     emoji:'🚗', color:'#98f6ee', bg:'#085e56' },
+  vestuario:     { label:'Vestuário',   emoji:'👕', color:'#67840b', bg:'#334205' },
+  viagem:        { label:'Viagem',      emoji:'✈️', color:'#8bb30f', bg:'#374706' },
+  servicos:      { label:'Serviços',    emoji:'📡', color:'#b0e212', bg:'#3b4b06' },
 };
 
 function cfIsPago(cf) {
@@ -4473,7 +4482,7 @@ function renderAdicionais() {
   sum.innerHTML = `
     <div class="sum-card"><div class="label">Débito Restante</div><div class="value red">${fmt(totalParcelasRestante)}</div></div>
     <div class="sum-card"><div class="label">Parcelas Este Mês</div><div class="value yellow">${fmt(totalParcelasMes)}</div></div>
-    <div class="sum-card"><div class="label">Gastos Avulsos Mês</div><div class="value" style="color:#c4b5fd">${fmt(totalGastosMes)}</div></div>
+    <div class="sum-card"><div class="label">Gastos Avulsos Mês</div><div class="value" style="color:var(--action-ink)">${fmt(totalGastosMes)}</div></div>
     <div class="sum-card"><div class="label">Pessoas</div><div class="value blue">${pessoas.size}</div></div>
   `;
 
@@ -4488,7 +4497,7 @@ function renderAdicionais() {
       const d = diasParaVencer(p.venc);
       const dLabel = concluido ? 'Quitado! 🎉' : d <= 0 ? 'Vence hoje!' : `Vence em ${d} dia${d>1?'s':''}`;
       return `
-      <div class="parcela-item" style="border-left:4px solid #4a4a6a">
+      <div class="parcela-item" style="border-left:4px solid var(--muted)">
         <div class="parcela-top">
           <div>
             <div class="parcela-name">${p.desc} <span class="adicional-person-tag">👤 ${p.pessoa}</span>${p.cartao ? ` <span style="font-size:0.72rem;color:var(--blue);font-weight:500;margin-left:4px">💳 ${p.cartao}</span>` : ''}</div>
@@ -4687,10 +4696,10 @@ function abrirFecharMes() {
     ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;';
     const box = document.createElement('div');
     box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;';
-    box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">💳</div><p style="font-weight:700;margin:0 0 8px;color:#0f2724">Nenhum cartão pago</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Marque pelo menos um cartão como pago antes de fechar o mês.</p>';
+    box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">💳</div><p style="font-weight:700;margin:0 0 8px;color:var(--text)">Nenhum cartão pago</p><p style="font-size:0.85rem;color:var(--muted);margin:0 0 16px">Marque pelo menos um cartão como pago antes de fechar o mês.</p>';
     const btn = document.createElement('button');
     btn.textContent = 'OK';
-    btn.style.cssText = 'padding:10px 24px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
+    btn.style.cssText = 'padding:10px 24px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
     btn.onclick = () => document.body.removeChild(ov);
     box.appendChild(btn);
     ov.appendChild(box);
@@ -4749,10 +4758,10 @@ function confirmarFecharMes() {
   ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;';
   const box = document.createElement('div');
   box.style.cssText = 'background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;';
-  box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">✅</div><p style="font-weight:700;margin:0 0 8px;color:#0d9488">Mês fechado com sucesso!</p><p style="font-size:0.85rem;color:#6b7280;margin:0 0 16px">Cartões reabertos com a fatura do próximo mês já calculada.</p>';
+  box.innerHTML = '<div style="font-size:2rem;margin-bottom:8px">✅</div><p style="font-weight:700;margin:0 0 8px;color:var(--teal)">Mês fechado com sucesso!</p><p style="font-size:0.85rem;color:var(--muted);margin:0 0 16px">Cartões reabertos com a fatura do próximo mês já calculada.</p>';
   const btn = document.createElement('button');
   btn.textContent = 'OK';
-  btn.style.cssText = 'padding:10px 24px;background:#0d9488;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
+  btn.style.cssText = 'padding:10px 24px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
   btn.onclick = () => document.body.removeChild(ov);
   box.appendChild(btn);
   ov.appendChild(box);
@@ -4856,13 +4865,13 @@ function renderProjecao() {
       const pagasAteEsse = p.pagas + mesOffset;
       const restantesDepois = (p.totalParc - p.pagas) - mesOffset;
       return `
-      <div style="background:var(--surface);border:1px solid #4a4a6a;border-left:4px solid #4a4a6a;border-radius:var(--radius);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="background:var(--surface);border:1px solid var(--muted);border-left:4px solid var(--muted);border-radius:var(--radius);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
           <div style="font-weight:600;font-size:0.92rem">${p.desc} <span class="adicional-person-tag">👤 ${p.pessoa}</span></div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">Parcela ${pagasAteEsse + 1} de ${p.totalParc} · faltarão <span style="color:var(--accent)">${restantesDepois - 1}</span> após este mês</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:1.05rem;font-weight:600;color:#a0a0c0">${fmt(p.mensal)}</div>
+          <div style="font-size:1.05rem;font-weight:600;color:var(--muted2)">${fmt(p.mensal)}</div>
           <div style="font-size:0.72rem;color:var(--muted)">dia ${p.venc}</div>
         </div>
       </div>`;
@@ -4973,9 +4982,9 @@ function renderProjecao() {
       <div class="value red">${fmt(totalGastosMes)}</div>
     </div>
     ${totalAdicMes > 0 ? `
-    <div class="sum-card" style="border-left:3px solid #4a4a6a">
+    <div class="sum-card" style="border-left:3px solid var(--muted)">
       <div class="label">Adicionais (excluídos)</div>
-      <div class="value" style="color:#a0a0c0">${fmt(totalAdicMes)}</div>
+      <div class="value" style="color:var(--muted2)">${fmt(totalAdicMes)}</div>
     </div>` : ''}
     ${totalReceitasMes > 0 ? `
     <div class="sum-card" style="border-left:3px solid var(--green)">
@@ -5451,7 +5460,7 @@ function renderDashboard() {
     document.getElementById('dashHeroReceita').textContent = fmt(totalReceitaD);
     document.getElementById('dashHeroDespesa').textContent = fmt(totalDespesa);
     document.getElementById('dashSaldoHero').style.background = saldoD >= 0
-      ? 'linear-gradient(135deg,#0d9488 0%,#14b8a6 60%,#2563eb 100%)'
+      ? 'linear-gradient(135deg,#0d9488 0%,#14b8a6 60%,#67840b 100%)'
       : 'linear-gradient(135deg,#be123c 0%,#e11d48 60%,#9f1239 100%)';
   }
 
@@ -5803,11 +5812,11 @@ function renderHistorico() {
   if (!el) { console.error('historicoList not found'); return; }
 
   const CAT_COR = {
-    alimentacao:'#f97316', mercado:'#0d9488', saude:'#e11d48',
-    transporte:'#2563eb', lazer:'#7c3aed', educacao:'#d97706',
-    moradia:'#059669', vestuario:'#ec4899', outros:'#6b7280',
-    assinaturas:'#8b5cf6', financiamento:'#1d4ed8', pets:'#84cc16',
-    presentes:'#f43f5e', viagem:'#06b6d4'
+    alimentacao:'#10b2a4', mercado:'#0c8d81', saude:'#4defe1',
+    transporte:'#13d8c6', lazer:'#8bb30f', educacao:'#72f3e7',
+    moradia:'#27ecdb', vestuario:'#d1f368', outros:'#e8f9b4',
+    assinaturas:'#67840b', financiamento:'#98f6ee', pets:'#b0e212',
+    presentes:'#c3ef39', viagem:'#ddf68e'
   };
 
   // Pega todos os meses com gastos, ordena do mais recente
@@ -5835,7 +5844,7 @@ function renderHistorico() {
 
     const barras = topCats.map(([cat, val]) => {
       const pct = (val / maxVal * 100).toFixed(1);
-      const cor = CAT_COR[cat] || '#6b7280';
+      const cor = CAT_COR[cat] || 'var(--muted)';
       const emoji = (CAT_EMOJIS && CAT_EMOJIS[cat]) ? CAT_EMOJIS[cat] : '';
       const label = (CAT_LABELS && CAT_LABELS[cat]) ? CAT_LABELS[cat] : cat;
       return '<div class="chart-row">' +
@@ -6029,7 +6038,7 @@ function closeMobMenu() {
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0">
     <button onclick="document.getElementById('_pwaBanner').style.display='none';localStorage.setItem('pwa_dismissed','1')" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:8px 12px;color:#fff;font-size:.8rem;cursor:pointer;font-family:inherit">Agora não</button>
-    <button id="_pwaBtnInstall" style="background:#fff;border:none;border-radius:8px;padding:8px 14px;color:#0d9488;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit">Instalar</button>
+    <button id="_pwaBtnInstall" style="background:#fff;border:none;border-radius:8px;padding:8px 14px;color:var(--teal);font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit">Instalar</button>
   </div>
 </div>
 
@@ -6087,11 +6096,11 @@ function renderRelatorio() {
   const maxGasto = Math.max(...gastosPorMes, 1);
 
   const CAT_COR = {
-    alimentacao:'#f97316', mercado:'#0d9488', saude:'#e11d48',
-    transporte:'#2563eb', lazer:'#7c3aed', educacao:'#d97706',
-    moradia:'#059669', vestuario:'#ec4899', outros:'#6b7280',
-    assinaturas:'#8b5cf6', financiamento:'#1d4ed8', pets:'#84cc16',
-    presentes:'#f43f5e', viagem:'#06b6d4'
+    alimentacao:'#10b2a4', mercado:'#0c8d81', saude:'#4defe1',
+    transporte:'#13d8c6', lazer:'#8bb30f', educacao:'#72f3e7',
+    moradia:'#27ecdb', vestuario:'#d1f368', outros:'#e8f9b4',
+    assinaturas:'#67840b', financiamento:'#98f6ee', pets:'#b0e212',
+    presentes:'#c3ef39', viagem:'#ddf68e'
   };
   const gastosDoMes = gastos.filter(g => g.data.startsWith(mesAtual));
   const catMap = {};
@@ -6190,7 +6199,7 @@ function renderRelatorio() {
       <div style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">${gastosDoMes.length} lançamentos · ${fmt(gastosAvulsosMes)} total</div>
       ${topCats.length ? topCats.map(([cat, val]) => {
         const pct = (val / maxCat * 100).toFixed(1);
-        const cor = CAT_COR[cat] || '#6b7280';
+        const cor = CAT_COR[cat] || 'var(--muted)';
         const emoji = (CAT_EMOJIS && CAT_EMOJIS[cat]) ? CAT_EMOJIS[cat] : '';
         const label = (CAT_LABELS && CAT_LABELS[cat]) ? CAT_LABELS[cat] : cat;
         return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
