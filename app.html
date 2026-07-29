@@ -3392,7 +3392,7 @@ function renderFinanciamentos() {
   const list = document.getElementById('listFinanciamentos');
   const sum = document.getElementById('sumFinanciamentos');
 
-  const totalRestante = financiamentos.reduce((a,f) => a + ((f.totalParc - f.pagas) * f.mensal), 0);
+  const totalRestante = financiamentos.reduce((a,f) => a + (f.mensal * f.totalParc - (f.pagamentos||[]).reduce((s,p)=>s+p.valorPago,0)), 0);
   const totalMensal = financiamentos.filter(f => f.pagas < f.totalParc).reduce((a,f) => a + f.mensal, 0);
   const totalEconomizado = financiamentos.reduce((a,f) => a + (f.pagamentos||[]).reduce((s,p)=>s+(p.desconto>0?p.desconto:0),0), 0);
 
