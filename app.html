@@ -2376,13 +2376,13 @@ input[type=file] { display: none; }
 <!-- MODAL REGISTRAR PAGAMENTO DE FINANCIAMENTO -->
 <div class="modal-overlay" id="modalPagamentoFinanc">
   <div class="modal">
-    <h3>Registrar Pagamento</h3>
+    <h3 id="modalPagamentoFinancTitle">Registrar Pagamento</h3>
     <div class="modal-fields">
-      <div style="font-size:0.85rem;color:var(--muted)">Parcela nº <span id="pf_numero"></span> de <span id="pf_total"></span></div>
+      <div class="field"><label>Nº da Parcela (de <span id="pf_total"></span>)</label><input type="number" id="pf_numero" min="1"></div>
       <div class="field"><label>Valor Pago (R$)</label><input type="number" id="pf_valor_pago" step="0.01"></div>
       <div class="field"><label>Data do Pagamento</label><input type="date" id="pf_data"></div>
       <div style="font-size:0.78rem;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 14px;">
-        <svg class="ic" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></svg> Se você antecipou a parcela e conseguiu desconto nos juros, informe o valor real pago — a diferença é calculada automaticamente.
+        <svg class="ic" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></svg> Se você antecipou a parcela e conseguiu desconto nos juros, informe o valor real pago — a diferença é calculada automaticamente. Você pode pagar uma parcela fora de ordem (ex: quitar a última parcela primeiro) mudando o número acima.
       </div>
     </div>
     <div class="modal-actions">
@@ -2879,6 +2879,7 @@ let contasFixas = load('fp_contas_fixas', _defaultContasFixas);
 let financiamentos = load('fp_financiamentos', []);
 let _editFinanciamentoId = null;
 let _pagamentoFinanciamentoId = null;
+let _editPagamentoIdx = null;
 
 function totalFinanciamentosMensal() {
   return financiamentos.filter(f => f.pagas < f.totalParc).reduce((a,f) => a + f.mensal, 0);
@@ -3410,9 +3411,8 @@ function renderFinanciamentos() {
     const concluido = restantes <= 0;
     const d = diasParaVencer(f.venc);
     const dLabel = concluido ? `Quitado! ${ic('partyPopper')}` : d <= 0 ? 'Vence hoje!' : `Vence em ${d} dia${d>1?'s':''}`;
-    const pagamentos = f.pagamentos || [];
-    const antecipacoes = pagamentos.filter(p => p.desconto > 0);
-    const economizado = antecipacoes.reduce((s,p)=>s+p.desconto,0);
+    const pagamentos = (f.pagamentos || []).slice().sort((a,b) => a.numero - b.numero);
+    const economizado = pagamentos.reduce((s,p)=>s+(p.desconto>0?p.desconto:0),0);
 
     return `
     <div class="parcela-item">
@@ -3434,7 +3434,10 @@ function renderFinanciamentos() {
         <div class="progress-track"><div class="progress-fill ${concluido?'completo':''}" style="width:${pct}%"></div></div>
       </div>
       ${economizado > 0 ? `<div style="font-size:0.78rem;color:var(--green);margin-top:6px">${ic('wallet')} Economizado com antecipações: ${fmt(economizado)}</div>` : ''}
-      ${antecipacoes.length ? `<div style="font-size:0.74rem;color:var(--muted);margin-top:4px">${antecipacoes.map(p=>`Parcela ${p.numero}: pago ${fmt(p.valorPago)} (desconto ${fmt(p.desconto)})`).join(' · ')}</div>` : ''}
+      ${pagamentos.length ? `<div style="font-size:0.74rem;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:6px">${pagamentos.map(p => {
+        const idx = (f.pagamentos||[]).indexOf(p);
+        return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border-radius:6px;padding:3px 8px">Parcela ${p.numero}: pago ${fmt(p.valorPago)}${p.desconto>0?` (desconto ${fmt(p.desconto)})`:''} <span style="cursor:pointer" onclick="editarPagamentoFinanciamento(${f.id},${idx})" title="Editar">${ic('pencil')}</span><span style="cursor:pointer" onclick="delPagamentoFinanciamento(${f.id},${idx})" title="Remover">${ic('trash')}</span></span>`;
+      }).join('')}</div>` : ''}
       <div class="parcela-actions">
         ${!concluido ? `<button class="btn-pagar" onclick="abrirPagamentoFinanciamento(${f.id})">${ic('check')} Registrar Pagamento</button>` : ''}
         <button class="btn-pagar" onclick="openModalFinanciamento(${f.id})" style="border-color:var(--blue);color:var(--blue)">${ic('pencil')}️ Editar</button>
@@ -3496,25 +3499,58 @@ function abrirPagamentoFinanciamento(id) {
   const f = financiamentos.find(x => x.id === id);
   if (!f || f.pagas >= f.totalParc) return;
   _pagamentoFinanciamentoId = id;
-  document.getElementById('pf_numero').textContent = f.pagas + 1;
+  _editPagamentoIdx = null;
+  document.getElementById('modalPagamentoFinancTitle').textContent = 'Registrar Pagamento';
+  document.getElementById('pf_numero').value = f.pagas + 1;
+  document.getElementById('pf_numero').max = f.totalParc;
   document.getElementById('pf_total').textContent = f.totalParc;
   document.getElementById('pf_valor_pago').value = f.mensal;
   document.getElementById('pf_data').value = hoje.toISOString().split('T')[0];
   document.getElementById('modalPagamentoFinanc').classList.add('open');
+}
+function editarPagamentoFinanciamento(financId, idx) {
+  const f = financiamentos.find(x => x.id === financId);
+  if (!f || !f.pagamentos || !f.pagamentos[idx]) return;
+  const p = f.pagamentos[idx];
+  _pagamentoFinanciamentoId = financId;
+  _editPagamentoIdx = idx;
+  document.getElementById('modalPagamentoFinancTitle').textContent = 'Editar Pagamento';
+  document.getElementById('pf_numero').value = p.numero;
+  document.getElementById('pf_numero').max = f.totalParc;
+  document.getElementById('pf_total').textContent = f.totalParc;
+  document.getElementById('pf_valor_pago').value = p.valorPago;
+  document.getElementById('pf_data').value = p.data;
+  document.getElementById('modalPagamentoFinanc').classList.add('open');
+}
+function delPagamentoFinanciamento(financId, idx) {
+  const f = financiamentos.find(x => x.id === financId);
+  if (!f || !f.pagamentos || !f.pagamentos[idx]) return;
+  if (!confirm('Remover este pagamento registrado?')) return;
+  f.pagamentos.splice(idx, 1);
+  f.pagas = Math.max(0, f.pagas - 1);
+  save('fp_financiamentos', financiamentos);
+  renderFinanciamentos();
 }
 function closeModalPagamentoFinanc() { document.getElementById('modalPagamentoFinanc').classList.remove('open'); }
 
 function confirmarPagamentoFinanciamento() {
   const f = financiamentos.find(x => x.id === _pagamentoFinanciamentoId);
   if (!f) return;
+  const numero = parseInt(document.getElementById('pf_numero').value);
   const valorPago = parseFloat(document.getElementById('pf_valor_pago').value);
   const data = document.getElementById('pf_data').value;
+  if (!numero || numero < 1 || numero > f.totalParc) { alert('Informe um número de parcela válido (1 a ' + f.totalParc + ').'); return; }
   if (isNaN(valorPago) || valorPago < 0) { alert('Informe o valor pago.'); return; }
-  const numero = f.pagas + 1;
-  const desconto = Math.round((f.mensal - valorPago) * 100) / 100;
   if (!f.pagamentos) f.pagamentos = [];
-  f.pagamentos.push({ numero, valorPago, data, desconto });
-  f.pagas++;
+  const duplicado = f.pagamentos.some((p, i) => p.numero === numero && i !== _editPagamentoIdx);
+  if (duplicado) { alert('Essa parcela já está registrada como paga. Edite o registro existente em vez de criar um novo.'); return; }
+  const desconto = Math.round((f.mensal - valorPago) * 100) / 100;
+  if (_editPagamentoIdx !== null) {
+    f.pagamentos[_editPagamentoIdx] = { numero, valorPago, data, desconto };
+  } else {
+    f.pagamentos.push({ numero, valorPago, data, desconto });
+    f.pagas++;
+  }
   save('fp_financiamentos', financiamentos);
   closeModalPagamentoFinanc();
   renderFinanciamentos();
