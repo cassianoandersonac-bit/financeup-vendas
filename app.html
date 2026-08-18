@@ -870,6 +870,21 @@ input[type=file] { display: none; }
   box-shadow: 0 0 0 3px rgba(13,148,136,.1);
 }
 
+.desc-suggest-list {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  margin-top: 4px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: var(--shadow); max-height: 190px; overflow-y: auto;
+}
+.desc-suggest-list.open { display: block; }
+.desc-suggest-item {
+  padding: 8px 11px; font-size: 0.82rem; color: var(--text); cursor: pointer;
+  border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;
+  align-items: center; gap: 8px;
+}
+.desc-suggest-item:last-child { border-bottom: none; }
+.desc-suggest-item:hover, .desc-suggest-item.active { background: var(--surface2); }
+.desc-suggest-item .dsi-meta { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; }
+
 .gastos-table {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
@@ -1969,9 +1984,10 @@ input[type=file] { display: none; }
           <option value="viagem">✈️ Viagem</option>
         </select>
       </div>
-      <div class="field">
+      <div class="field" id="gDescField" style="position:relative">
         <label>Descrição</label>
-        <input type="text" id="gDesc" placeholder="Ex: Mercado">
+        <input type="text" id="gDesc" placeholder="Ex: Mercado" oninput="onGDescInput()" autocomplete="off">
+        <div class="desc-suggest-list" id="gDescSuggest"></div>
       </div>
       <div class="field">
         <label>Valor (R$)</label>
@@ -3922,8 +3938,53 @@ function addGasto() {
   save('fp_gastos', gastos);
   document.getElementById('gDesc').value = '';
   document.getElementById('gValor').value = '';
+  hideDescSuggestions();
   renderGastos();
 }
+function onGDescInput() {
+  const q = document.getElementById('gDesc').value.trim().toLowerCase();
+  const list = document.getElementById('gDescSuggest');
+  if (!q) { hideDescSuggestions(); return; }
+  const vistos = new Set();
+  const matches = gastos
+    .filter(g => (g.desc||'').toLowerCase().includes(q))
+    .sort((a,b) => b.data.localeCompare(a.data))
+    .filter(g => {
+      const chave = g.desc.toLowerCase();
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    })
+    .slice(0, 6);
+  if (!matches.length) { hideDescSuggestions(); return; }
+  list.innerHTML = matches.map(g => `
+    <div class="desc-suggest-item" onmousedown="event.preventDefault();selectGDescSuggestion('${g.desc.replace(/'/g,"\\'")}')">
+      <span>${g.desc}</span>
+      <span class="dsi-meta">${CAT_EMOJIS[g.cat]||''} ${CAT_LABELS[g.cat]||g.cat}${g.cartao ? ' · '+g.cartao : ''}</span>
+    </div>`).join('');
+  list.classList.add('open');
+}
+function selectGDescSuggestion(desc) {
+  const match = gastos.filter(g => g.desc === desc).sort((a,b) => b.data.localeCompare(a.data))[0];
+  document.getElementById('gDesc').value = desc;
+  if (match) {
+    document.getElementById('gCat').value = match.cat;
+    const cartaoSel = document.getElementById('gCartao');
+    if (match.cartao && [...cartaoSel.options].some(o => o.value === match.cartao)) {
+      cartaoSel.value = match.cartao;
+    }
+  }
+  hideDescSuggestions();
+  document.getElementById('gValor').focus();
+}
+function hideDescSuggestions() {
+  const list = document.getElementById('gDescSuggest');
+  if (list) { list.classList.remove('open'); list.innerHTML = ''; }
+}
+document.addEventListener('click', e => {
+  const field = document.getElementById('gDescField');
+  if (field && !field.contains(e.target)) hideDescSuggestions();
+});
 function delGasto(id) {
   const g = gastos.find(x=>x.id===id);
   if (g && g.cartao) {
