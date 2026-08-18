@@ -817,6 +817,17 @@ input[type=file] { display: none; }
 
 /* ── CARDS ── */
 .cards-list { display: flex; flex-direction: column; gap: 10px; }
+.pessoa-debito-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.pessoa-debito-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow);
+}
+.pessoa-debito-card .pdc-nome { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.pessoa-debito-card .pdc-total { font-size: 1.2rem; font-weight: 800; color: var(--red); margin-top: 6px; }
+.pessoa-debito-card .pdc-sub { font-size: 0.68rem; color: var(--muted2); margin-top: 4px; }
 .card-item {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px 18px;
@@ -2035,6 +2046,11 @@ input[type=file] { display: none; }
   <!-- ADICIONAIS -->
   <div class="section" id="sec-adicionais">
     <div class="summary-row" id="sumAdicionais"></div>
+
+    <div class="section-header">
+      <div class="section-title">Quanto cada um deve</div>
+    </div>
+    <div class="pessoa-debito-row" id="pessoaDebitoRow"></div>
 
     <div class="section-header">
       <div class="section-title">Parcelamentos dos Adicionais</div>
@@ -4709,6 +4725,33 @@ function renderAdicionais() {
     <div class="sum-card"><div class="label">Gastos Avulsos Mês</div><div class="value" style="color:var(--action-ink)">${fmt(totalGastosMes)}</div></div>
     <div class="sum-card"><div class="label">Pessoas</div><div class="value blue">${pessoas.size}</div></div>
   `;
+
+  const debitoPorPessoa = {};
+  adicionalParcelas.forEach(p => {
+    debitoPorPessoa[p.pessoa] = debitoPorPessoa[p.pessoa] || { parcelas: 0, avulsos: 0 };
+    debitoPorPessoa[p.pessoa].parcelas += Math.max(0, (p.totalParc - p.pagas) * p.mensal);
+  });
+  adicionalGastos.forEach(g => {
+    debitoPorPessoa[g.pessoa] = debitoPorPessoa[g.pessoa] || { parcelas: 0, avulsos: 0 };
+    debitoPorPessoa[g.pessoa].avulsos += g.valor;
+  });
+  const pessoaRow = document.getElementById('pessoaDebitoRow');
+  const nomesDebito = Object.keys(debitoPorPessoa).sort((a,b) =>
+    (debitoPorPessoa[b].parcelas + debitoPorPessoa[b].avulsos) - (debitoPorPessoa[a].parcelas + debitoPorPessoa[a].avulsos));
+  if (!nomesDebito.length) {
+    pessoaRow.innerHTML = '<div class="empty-state">Nenhum adicional cadastrado ainda.</div>';
+  } else {
+    pessoaRow.innerHTML = nomesDebito.map(nome => {
+      const d = debitoPorPessoa[nome];
+      const total = d.parcelas + d.avulsos;
+      return `
+      <div class="pessoa-debito-card">
+        <div class="pdc-nome">${ic('user')} ${nome}</div>
+        <div class="pdc-total">${fmt(total)}</div>
+        <div class="pdc-sub">${fmt(d.parcelas)} em parcelas · ${fmt(d.avulsos)} em avulsos</div>
+      </div>`;
+    }).join('');
+  }
 
   const listParcelas = document.getElementById('listAdicionalParcelas');
   if (!adicionalParcelas.length) {
