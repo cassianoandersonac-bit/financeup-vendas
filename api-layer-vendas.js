@@ -132,26 +132,58 @@ window.load = function(key, def) {
 };
 
 // ── save() ────────────────────────────────────────────────────
-let _saveQueue = {};
+let _saveQueue    = {};  // campo → último valor a salvar
+let _saveVersion  = {};  // campo → contador incrementado a cada chamada de save()
+                          // (os arrays são mutados por referência via push, então
+                          //  comparar objetos com "===" não detectaria mudança nenhuma)
+let _saveInFlight = {};  // campo → já existe um envio em andamento?
+let _pendingSaves = 0;   // total de campos com salvamento pendente (bloqueia fechar a aba)
+
+window.addEventListener('beforeunload', function(e) {
+  if (_pendingSaves > 0) {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
+
 window.save = function(key, val) {
   if (key === 'fp_theme') { localStorage.setItem('fp_theme', JSON.stringify(val)); return; }
   const campo = KEY_MAP[key];
   if (!campo) { localStorage.setItem(key, JSON.stringify(val)); return; }
   window._dados[campo] = val;
-  _saveQueue[campo] = val;
   _saveComRetry(campo, val);
 };
 
 async function _saveComRetry(campo, val) {
-  for (let i = 0; i < 3; i++) {
-    try {
-      const valorAtual = _saveQueue[campo];
-      await _api('PUT', '/data', { [campo]: valorAtual });
-      return;
-    } catch (err) {
-      if (i < 2) await new Promise(r => setTimeout(r, 1500 * (i + 1)));
-      else console.warn('[api-vendas] Falha ao salvar na nuvem:', campo, err);
+  _saveQueue[campo] = val;
+  _saveVersion[campo] = (_saveVersion[campo] || 0) + 1;
+  if (_saveInFlight[campo]) return; // já existe um loop enviando este campo; ele pegará o valor mais novo
+  _saveInFlight[campo] = true;
+  _pendingSaves++;
+
+  try {
+    // Repete até que a versão enviada com sucesso seja a mais recente da fila
+    // (evita que um envio antigo, atrasado pela rede, sobrescreva um mais novo).
+    while (true) {
+      const versaoEnviada = _saveVersion[campo];
+      const valorEnviado  = _saveQueue[campo];
+      let sucesso = false;
+      for (let i = 0; i < 3 && !sucesso; i++) {
+        try {
+          await _api('PUT', '/data', { [campo]: valorEnviado });
+          sucesso = true;
+        } catch (err) {
+          if (i < 2) await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+          else console.warn('[api-vendas] Falha ao salvar na nuvem:', campo, err);
+        }
+      }
+      if (!sucesso || _saveVersion[campo] === versaoEnviada) break;
+      // Chegou uma versão mais nova enquanto salvávamos — envia ela antes de terminar.
     }
+  } finally {
+    _saveInFlight[campo] = false;
+    _pendingSaves--;
   }
 }
 
