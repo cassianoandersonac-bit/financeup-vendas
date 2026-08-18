@@ -889,12 +889,12 @@ input[type=file] { display: none; }
 .desc-suggest-list.open { display: block; }
 .desc-suggest-item {
   padding: 8px 11px; font-size: 0.82rem; color: var(--text); cursor: pointer;
-  border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;
-  align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border); overflow: hidden;
 }
 .desc-suggest-item:last-child { border-bottom: none; }
 .desc-suggest-item:hover, .desc-suggest-item.active { background: var(--surface2); }
-.desc-suggest-item .dsi-meta { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; }
+.desc-suggest-item .dsi-meta { display: block; font-size: 0.72rem; color: var(--muted2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desc-suggest-item .dsi-desc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .gastos-table {
   background: var(--surface); border: 1px solid var(--border);
@@ -3975,7 +3975,7 @@ function onGDescInput() {
   if (!matches.length) { hideDescSuggestions(); return; }
   list.innerHTML = matches.map(g => `
     <div class="desc-suggest-item" onmousedown="event.preventDefault();selectGDescSuggestion('${g.desc.replace(/'/g,"\\'")}')">
-      <span>${g.desc}</span>
+      <span class="dsi-desc">${g.desc}</span>
       <span class="dsi-meta">${CAT_EMOJIS[g.cat]||''} ${CAT_LABELS[g.cat]||g.cat}${g.cartao ? ' · '+g.cartao : ''}</span>
     </div>`).join('');
   list.classList.add('open');
