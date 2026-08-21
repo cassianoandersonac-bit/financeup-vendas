@@ -10,8 +10,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinanceUp">
-<script>window.FP_API_BASE = 'https://financas-backend-eight.vercel.app';</script>
-<script src="api-layer-vendas.js?v=1"></script>
 <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;FinanceUp&quot;,&quot;short_name&quot;:&quot;FinanceUp&quot;,&quot;description&quot;:&quot;Controle financeiro pessoal&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230d9488&quot;,&quot;theme_color&quot;:&quot;%230d9488&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230d9488'/%3E%3Crect x='80' y='300' width='80' height='132' rx='12' fill='rgba(255,255,255,0.5)'/%3E%3Crect x='216' y='220' width='80' height='212' rx='12' fill='rgba(255,255,255,0.75)'/%3E%3Crect x='352' y='140' width='80' height='292' rx='12' fill='white'/%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <script>
 const ICON_PATHS = {
@@ -92,10 +90,23 @@ function ic(name, size) {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
+    // Network-first: sempre busca a versão mais nova quando há internet
+    // (para que atualizações cheguem a quem já instalou o app), e só usa
+    // o cache como fallback quando o dispositivo está offline.
     const swCode = `
+      const CACHE = 'fp-v2';
       self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('activate', e => clients.claim());
-      self.addEventListener('fetch', e => e.respondWith(caches.open('fp-v1').then(c => c.match(e.request).then(r => r || fetch(e.request).then(nr => { c.put(e.request, nr.clone()); return nr; })))));
+      self.addEventListener('activate', e => {
+        e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+        clients.claim();
+      });
+      self.addEventListener('fetch', e => e.respondWith(
+        fetch(e.request).then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        }).catch(() => caches.match(e.request))
+      ));
     `;
     const blob = new Blob([swCode], {type: 'application/javascript'});
     const url = URL.createObjectURL(blob);
@@ -1420,11 +1431,11 @@ input[type=file] { display: none; }
         if (diff < 0 && _slide > 0) _goSlide(_slide-1);
       }
     }, {passive:true});
-    // Inicialização do tutorial/PIN é feita por iniciarApp()
-    // que é chamada pelo api-layer após login bem-sucedido
+    // Inicialização do tutorial/PIN é feita por iniciarApp(),
+    // chamada assim que a página termina de carregar (ver seção STORAGE)
   });
 
-  // Expõe iniciarApp() para o api-layer chamar após login/token válido
+  // Expõe iniciarApp() para ser chamada assim que a página carrega
   window.iniciarApp = function() {
     const tutorialFei = localStorage.getItem(TUTORIAL_KEY);
     if (!tutorialFei) {
@@ -1623,7 +1634,7 @@ input[type=file] { display: none; }
   // Expõe função para o tutorial chamar após fechar
   window._iniciarPinFn = _iniciarPin;
 
-  // PIN é iniciado por iniciarApp() → chamado pelo api-layer após login
+  // PIN é iniciado por iniciarApp() → chamado assim que a página carrega
 })();
 </script>
 
@@ -2784,7 +2795,107 @@ function reRenderAll() {
 }
 
 // ---- STORAGE ----
-// load() e save() são providos pelo api-layer-vendas.js (nuvem com fallback offline)
+// FinanceUp roda 100% offline: load()/save() usam só o localStorage do aparelho.
+window.load = function(key, def) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return def;
+    const val = JSON.parse(raw);
+    return (val === undefined || val === null) ? def : val;
+  } catch { return def; }
+};
+window.save = function(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (err) { console.warn('Falha ao salvar localmente:', key, err); }
+};
+
+// Dispara o tutorial/PIN assim que a página carrega (antes isso era feito
+// pela camada de nuvem, após o login).
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof iniciarApp === 'function') iniciarApp();
+});
+
+// ── Migração única: traz para o localStorage os dados de quem comprou antes
+//    desta versão e já tinha uma conta criada na nuvem (versão antiga do app).
+//    Não bloqueia o uso do app enquanto roda; se tiver sucesso, atualiza os
+//    dados na tela sem precisar recarregar a página. ──
+(function migrarDadosDaNuvem() {
+  if (localStorage.getItem('fp_cloud_migrated') === '1') return;
+  const deviceId = localStorage.getItem('fp_device_id');
+  const cred     = localStorage.getItem('fp_device_cred');
+  const tokenSalvo = localStorage.getItem('fp_token');
+  if (!deviceId && !tokenSalvo) { localStorage.setItem('fp_cloud_migrated', '1'); return; }
+
+  const OLD_API_BASE = 'https://financas-backend-eight.vercel.app';
+  const CLOUD_KEY_MAP = {
+    fp_cartoes: 'cartoes', fp_parcelas: 'parcelas', fp_gastos: 'gastos', fp_invest: 'invest',
+    fp_adicional_parcelas: 'adicionalParcelas', fp_adicional_gastos: 'adicionalGastos',
+    fp_contas_fixas: 'contasFixas', fp_receitas: 'receitas', fp_cofrinhos: 'cofrinhos',
+    fp_metas: 'metas', fp_financiamentos: 'financiamentos'
+  };
+
+  async function buscarComToken(token) {
+    const res = await fetch(`${OLD_API_BASE}/data`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('token inválido');
+    return res.json();
+  }
+
+  async function buscarDadosAntigos() {
+    if (tokenSalvo) {
+      try { return await buscarComToken(tokenSalvo); } catch {}
+    }
+    if (!deviceId || !cred) return null;
+    try {
+      const r = await fetch(`${OLD_API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: `fp-${deviceId}@financeup.device`, senha: cred })
+      });
+      if (!r.ok) return null;
+      const { token } = await r.json();
+      return await buscarComToken(token);
+    } catch { return null; }
+  }
+
+  buscarDadosAntigos().then(dados => {
+    if (!dados) return; // falhou ou não existia conta — tenta de novo na próxima abertura
+    Object.keys(CLOUD_KEY_MAP).forEach(fpKey => {
+      const campo = CLOUD_KEY_MAP[fpKey];
+      if (dados[campo] !== undefined && dados[campo] !== null) {
+        localStorage.setItem(fpKey, JSON.stringify(dados[campo]));
+      }
+    });
+    localStorage.setItem('fp_backup_seed', _BACKUP_VERSION); // não deixa o seed de demo sobrescrever
+    localStorage.setItem('fp_cloud_migrated', '1');
+
+    // Atualiza as variáveis já carregadas e re-renderiza com os dados migrados
+    cartoes           = load('fp_cartoes', cartoes);
+    parcelas           = load('fp_parcelas', parcelas);
+    gastos             = load('fp_gastos', gastos);
+    investimentos      = load('fp_invest', investimentos);
+    adicionalParcelas  = load('fp_adicional_parcelas', adicionalParcelas);
+    adicionalGastos    = load('fp_adicional_gastos', adicionalGastos);
+    contasFixas        = load('fp_contas_fixas', contasFixas);
+    receitas           = load('fp_receitas', receitas);
+    cofrinhos          = load('fp_cofrinhos', cofrinhos);
+    metas              = load('fp_metas', metas);
+    financiamentos     = load('fp_financiamentos', financiamentos);
+
+    if (typeof renderCartoes === 'function')        renderCartoes();
+    if (typeof renderParcelas === 'function')       renderParcelas();
+    if (typeof renderFinanciamentos === 'function') renderFinanciamentos();
+    if (typeof renderGastos === 'function')         renderGastos();
+    if (typeof renderInvest === 'function')         renderInvest();
+    if (typeof renderAdicionais === 'function')     renderAdicionais();
+    if (typeof renderContasFixas === 'function')    renderContasFixas();
+    if (typeof renderReceitas === 'function')       renderReceitas();
+    if (typeof renderCofrinhos === 'function')      renderCofrinhos();
+    if (typeof renderMetas === 'function')          renderMetas();
+    if (typeof renderAlerts === 'function')         renderAlerts();
+    if (typeof atualizarTotalMes === 'function')    atualizarTotalMes();
+    if (typeof populateCartaoSelect === 'function') populateCartaoSelect();
+  }).catch(() => {});
+})();
 
 // ── DADOS DEMO — substitua pelos seus ao começar a usar ──
 const _BACKUP_VERSION = 'demo-v1';
